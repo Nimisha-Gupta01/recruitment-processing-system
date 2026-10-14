@@ -1,8 +1,6 @@
 # Online Recruitment Processing System
 
-> FSAD (Full Stack Application Development) — Assignment 1
-> MTECH | BITS Pilani | 2026
-
+> FSAD (Full Stack Application Development) 
 ---
 
 ## What is this project?
