@@ -1,0 +1,112 @@
+# Changelog
+
+All notable changes to this project are documented here.
+Each entry maps to one commit or PR. Format: **what was done**, **why**, **how to verify**.
+
+---
+
+## [v0.2.0] — 2026-10-14 — Backend Module 1: Authentication & Project Scaffold
+
+### What was done
+- Scaffolded the full Spring Boot 3 project structure under `backend/`
+- Implemented **Module 1: Registration & Login** — complete end-to-end
+
+### Files added
+| File | Purpose |
+|------|---------|
+| `backend/pom.xml` | Maven project config — Spring Boot 3.3.4, Java 21, JWT, JPA, Security, Mail, Lombok |
+| `backend/src/main/resources/application.properties` | DB, JWT, mail, CORS config |
+| `RecruitmentSystemApplication.java` | Spring Boot entry point |
+| `entity/Employer.java` | JPA entity for employers table |
+| `entity/Candidate.java` | JPA entity for candidates table (with skills, prefs relationships) |
+| `entity/CandidateSkill.java` | Skills linked to a candidate |
+| `entity/CandidateLocationPref.java` | Location preferences per candidate |
+| `entity/CandidateRolePref.java` | Job role preferences per candidate |
+| `repository/EmployerRepository.java` | Spring Data JPA repo for employers |
+| `repository/CandidateRepository.java` | Spring Data JPA repo for candidates |
+| `dto/AuthDTOs.java` | Request/response DTOs: EmployerRegisterRequest, CandidateRegisterRequest, LoginRequest, AuthResponse |
+| `security/JwtUtil.java` | JWT generate / validate / extract claims using jjwt 0.12.6 |
+| `security/JwtAuthFilter.java` | OncePerRequestFilter — reads Bearer token, sets SecurityContext |
+| `security/SecurityConfig.java` | Spring Security config — stateless, JWT filter, CORS, role-based route protection |
+| `service/AuthService.java` | Business logic: register employer, register candidate, login (both roles) |
+| `controller/AuthController.java` | REST endpoints: POST /api/auth/register/employer, /register/candidate, /login |
+| `exception/GlobalExceptionHandler.java` | Handles IllegalArgumentException + validation errors with clean JSON responses |
+
+### Files modified
+| File | Change |
+|------|--------|
+| `docs/db-schema.sql` | Fixed `YEAR` → `INT` for `year_of_passing` and `established_yr` (Hibernate validation mismatch). Added DROP TABLE IF EXISTS block for safe re-runs. Fixed sample data bcrypt hashes. |
+| `README.md` | Replaced placeholder with full project documentation |
+
+### API endpoints added
+| Method | URL | Description |
+|--------|-----|-------------|
+| POST | `/api/auth/register/employer` | Registers employer, returns JWT |
+| POST | `/api/auth/register/candidate` | Registers candidate, returns JWT |
+| POST | `/api/auth/login` | Validates credentials, returns JWT + role |
+
+### Tested & verified
+- `mvn compile` — clean, zero errors
+- App starts in 2.5s, connects to MySQL `recruitment_db`
+- Register candidate API returns JWT token ✅
+- Login API returns JWT token ✅
+
+### How to run after pulling this
+```bash
+# 1. Start MySQL
+brew services start mysql
+
+# 2. Set up DB (run once)
+mysql -u root < docs/db-schema.sql
+
+# 3. Run backend
+cd backend && mvn spring-boot:run
+```
+
+---
+
+## [v0.1.0] — 2026-10-11 — Project Initialization & Documentation
+
+### What was done
+- Initialized git repository
+- Created all project documentation artifacts for Assignment 1 presentation
+
+### Files added
+| File | Purpose |
+|------|---------|
+| `docs/abstract.md` | One-page project abstract (Assignment Artifact #5) |
+| `docs/SRS.md` | Full Software Requirements Specification — functional reqs, non-functional reqs, use cases, module breakdown, tech stack (Assignment Artifact #3) |
+| `docs/db-schema.sql` | Complete MySQL DDL — 9 tables with indexes and sample data (Assignment Artifact #1) |
+
+### Decisions made
+- **Tech stack chosen:** Spring Boot 3 + ReactJS 18 + MySQL 8 + Spring Data JPA
+- **Prototype scope:** Registration/Login + Candidate Profile + Job Search & Apply (3 core modules)
+- **Team split:** Feature-by-feature (each member owns full stack for their assigned modules)
+
+---
+
+## How to update this file
+
+Every time you commit or raise a PR, add a new entry at the **top** of this file (above the previous entry) using this format:
+
+```markdown
+## [vX.Y.Z] — YYYY-MM-DD — <short title>
+
+### What was done
+- ...
+
+### Files added / modified
+| File | Change |
+|------|--------|
+| ... | ... |
+
+### API endpoints added (if any)
+...
+
+### How to run after pulling this
+...
+```
+
+**Version numbering:**
+- `v0.X.0` — new module or major feature
+- `v0.X.Y` — bug fix or small change within a module
