@@ -112,7 +112,7 @@ CREATE TABLE vacancies (
     num_openings        INT             DEFAULT 1,
     location            VARCHAR(100),
     application_deadline DATE,
-    status              ENUM('Open','Closed','On Hold') DEFAULT 'Open',
+    status              ENUM('Open','Closed','On_Hold') DEFAULT 'Open',
     posted_at           DATETIME        DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (employer_id) REFERENCES employers(employer_id) ON DELETE CASCADE
 );
