@@ -5,6 +5,84 @@ Each entry maps to one commit or PR. Format: **what was done**, **why**, **how t
 
 ---
 
+## [v0.4.0] — 2026-10-30 — Backend Module 4: Candidate Profile & Preferences API
+
+### What was done
+- Implemented **Module 4: Candidate Profile & Preferences** — GET + PUT `/api/candidate/profile`
+- Skills, location preferences, and role preferences are replaced on each update (delete + re-insert)
+- All new files use explicit getters/setters (no Lombok) for Java 25 compatibility on dev machines
+
+### Files added
+| File | Purpose |
+|------|---------|
+| `repository/CandidateSkillRepository.java` | `findByCandidate_CandidateId`, `deleteByCandidate_CandidateId` |
+| `repository/CandidateLocationPrefRepository.java` | Same pattern for location prefs |
+| `repository/CandidateRolePrefRepository.java` | Same pattern for role prefs |
+| `dto/CandidateDTOs.java` | `ProfileUpdateRequest`, `ProfileResponse`, `SkillRequest`, `SkillResponse` |
+| `service/CandidateService.java` | `getProfile`, `updateProfile` (with transactional delete-reinsert) |
+| `controller/CandidateController.java` | `GET /api/candidate/profile`, `PUT /api/candidate/profile` |
+
+### API endpoints added
+| Method | URL | Description |
+|--------|-----|-------------|
+| GET | `/api/candidate/profile` | Get logged-in candidate's full profile including skills + preferences |
+| PUT | `/api/candidate/profile` | Update profile fields + replace skills/location prefs/role prefs |
+
+### Alignment with teammate's modules
+- Module 3 (Candidate Search): can now query `candidates` + `candidate_skills` + `candidate_location_prefs` tables populated via this API
+- Module 5 (Job Search & Apply): the `candidate_id` FK in `applications` table references candidates registered and profiled via Modules 1 + 4
+
+### How to run after pulling this
+```bash
+cd backend && mvn spring-boot:run
+# GET /api/candidate/profile  — requires ROLE_CANDIDATE JWT token from /api/auth/login
+# PUT /api/candidate/profile  — send JSON body with any subset of profile fields
+```
+
+---
+
+## [v0.3.0] — 2026-10-30 — Backend Module 2: Vacancy Management API
+
+### What was done
+- Implemented **Module 2: Vacancy Management** — full CRUD + close for employer vacancies
+- `Vacancy` entity written without Lombok (`@Data`) for Java 25 compatibility; uses explicit getters/setters
+- Fixed DB schema `vacancies.status` enum: `'On Hold'` → `'On_Hold'` to match Java enum naming
+
+### Files added
+| File | Purpose |
+|------|---------|
+| `entity/Vacancy.java` | JPA entity for `vacancies` table — no Lombok, explicit getters/setters |
+| `repository/VacancyRepository.java` | `findByEmployer_EmployerIdOrderByPostedAtDesc` |
+| `dto/VacancyDTOs.java` | `VacancyCreateRequest`, `VacancyUpdateRequest`, `VacancyResponse` |
+| `service/VacancyService.java` | `create`, `listByEmployer`, `getOne`, `update`, `close` with owner check |
+| `controller/VacancyController.java` | POST/GET/PUT/PATCH under `/api/employer/vacancies` |
+
+### Files modified
+| File | Change |
+|------|--------|
+| `docs/db-schema.sql` | `status ENUM('Open','Closed','On Hold')` → `ENUM('Open','Closed','On_Hold')` |
+
+### API endpoints added
+| Method | URL | Description |
+|--------|-----|-------------|
+| POST | `/api/employer/vacancies` | Post new vacancy (returns 201) |
+| GET | `/api/employer/vacancies` | List all vacancies for authenticated employer (ordered newest first) |
+| GET | `/api/employer/vacancies/{id}` | Get single vacancy (owner-only) |
+| PUT | `/api/employer/vacancies/{id}` | Edit vacancy fields (owner-only, partial update) |
+| PATCH | `/api/employer/vacancies/{id}/close` | Set status to Closed (owner-only) |
+
+### Alignment with teammate's modules
+- Module 3 (Candidate Search): employer has vacancies to associate candidates with
+- Module 5 (Job Search & Apply): the `vacancy_id` FK in `applications` table references vacancies created via this API
+
+### How to run after pulling this
+```bash
+cd backend && mvn spring-boot:run
+# POST /api/employer/vacancies   — requires ROLE_EMPLOYER JWT token from /api/auth/login
+```
+
+---
+
 ## [v0.2.0] — 2026-10-14 — Backend Module 1: Authentication & Project Scaffold
 
 ### What was done

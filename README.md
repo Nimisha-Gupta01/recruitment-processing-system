@@ -76,11 +76,27 @@ recruitment-processing-system/
 
 ## API Endpoints (implemented so far)
 
+### Module 1 — Auth (Member 1)
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
 | POST | `/api/auth/register/employer` | Register new employer | Public |
 | POST | `/api/auth/register/candidate` | Register new candidate | Public |
 | POST | `/api/auth/login` | Login (employer or candidate) | Public |
+
+### Module 2 — Vacancy Management (Member 2)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/api/employer/vacancies` | Post a new vacancy | `ROLE_EMPLOYER` |
+| GET | `/api/employer/vacancies` | List employer's own vacancies | `ROLE_EMPLOYER` |
+| GET | `/api/employer/vacancies/{id}` | Get single vacancy | `ROLE_EMPLOYER` |
+| PUT | `/api/employer/vacancies/{id}` | Edit a vacancy | `ROLE_EMPLOYER` |
+| PATCH | `/api/employer/vacancies/{id}/close` | Close a vacancy | `ROLE_EMPLOYER` |
+
+### Module 4 — Candidate Profile & Preferences (Member 2)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/candidate/profile` | Get logged-in candidate's full profile (incl. skills + prefs) | `ROLE_CANDIDATE` |
+| PUT | `/api/candidate/profile` | Update profile, skills, location prefs, role prefs | `ROLE_CANDIDATE` |
 
 ---
 
