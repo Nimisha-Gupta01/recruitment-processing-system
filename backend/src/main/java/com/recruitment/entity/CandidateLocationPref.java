@@ -1,9 +1,7 @@
 package com.recruitment.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
 
-@Data
 @Entity
 @Table(name = "candidate_location_prefs")
 public class CandidateLocationPref {
@@ -18,4 +16,13 @@ public class CandidateLocationPref {
 
     @Column(nullable = false, length = 100)
     private String location;
+
+    public Integer getPrefId() { return prefId; }
+    public void setPrefId(Integer prefId) { this.prefId = prefId; }
+
+    public Candidate getCandidate() { return candidate; }
+    public void setCandidate(Candidate candidate) { this.candidate = candidate; }
+
+    public String getLocation() { return location; }
+    public void setLocation(String location) { this.location = location; }
 }

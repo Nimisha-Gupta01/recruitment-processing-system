@@ -1,9 +1,7 @@
 package com.recruitment.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
 
-@Data
 @Entity
 @Table(name = "candidate_skills")
 public class CandidateSkill {
@@ -23,4 +21,16 @@ public class CandidateSkill {
     private Proficiency proficiency = Proficiency.Intermediate;
 
     public enum Proficiency { Beginner, Intermediate, Expert }
+
+    public Integer getSkillId() { return skillId; }
+    public void setSkillId(Integer skillId) { this.skillId = skillId; }
+
+    public Candidate getCandidate() { return candidate; }
+    public void setCandidate(Candidate candidate) { this.candidate = candidate; }
+
+    public String getSkillName() { return skillName; }
+    public void setSkillName(String skillName) { this.skillName = skillName; }
+
+    public Proficiency getProficiency() { return proficiency; }
+    public void setProficiency(Proficiency proficiency) { this.proficiency = proficiency; }
 }
