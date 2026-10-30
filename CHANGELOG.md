@@ -5,6 +5,50 @@ Each entry maps to one commit or PR. Format: **what was done**, **why**, **how t
 
 ---
 
+## [v0.4.2] — 2026-10-30 — Fix: SecurityException → 403 for unauthorised vacancy access
+
+### What was done
+- `GlobalExceptionHandler` now catches `SecurityException` and returns **403 Forbidden** with `{"error": "Access denied"}`
+- Previously, `VacancyService.assertOwner` threw `SecurityException` which was unhandled → returned 500
+
+### Files modified
+| File | Change |
+|------|--------|
+| `exception/GlobalExceptionHandler.java` | Added `@ExceptionHandler(SecurityException.class)` returning 403 |
+
+### How to verify
+```bash
+# Login as employer A, create a vacancy, then login as employer B and try GET /api/employer/vacancies/{id}
+# Should return 403 {"error":"Access denied"}, not 500
+```
+
+---
+
+## [v0.4.1] — 2026-10-30 — Fix: Remove Lombok for Java 25 compatibility across all entities and DTOs
+
+### What was done
+- Removed `@Data` (Lombok) from **all** entity and DTO classes — replaced with explicit getters/setters
+- Lombok's annotation processor crashes on Java 25 (`TypeTag::UNKNOWN` error), breaking compilation
+- Project now compiles cleanly on **Java 25** (default on dev machine) and **Java 21** — no JVM switching needed
+- **Zero behaviour change** — same method names, same logic, same API responses
+
+### Files modified
+| File | Change |
+|------|--------|
+| `entity/Candidate.java` | Removed `@Data` + `import lombok.Data`, added explicit getters/setters |
+| `entity/CandidateSkill.java` | Same |
+| `entity/CandidateLocationPref.java` | Same |
+| `entity/CandidateRolePref.java` | Same |
+| `entity/Employer.java` | Same |
+| `dto/AuthDTOs.java` | Removed `@Data` from all four inner classes, added explicit getters/setters |
+
+### How to verify
+```bash
+cd backend && mvn compile    # must print BUILD SUCCESS on Java 25
+```
+
+---
+
 ## [v0.4.0] — 2026-10-30 — Backend Module 4: Candidate Profile & Preferences API
 
 ### What was done
