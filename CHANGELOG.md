@@ -5,6 +5,47 @@ Each entry maps to one commit or PR. Format: **what was done**, **why**, **how t
 
 ---
 
+## What's Still Pending
+
+### Member 1 — Fassi (Modules 1, 3, 5)
+
+| Module | What's needed | Status |
+|--------|--------------|--------|
+| **Module 3 — Candidate Search** | `GET /api/employer/candidates/search` with filters: qualification, location, salary, merit/percentage. Returns ranked candidate list. Queries `candidates`, `candidate_skills`, `candidate_location_prefs` tables (populated by Module 4). | 🔲 Not started |
+| **Module 5 — Job Search & Apply** | `GET /api/candidate/vacancies` (list open vacancies, filterable by location/salary/type), `POST /api/candidate/vacancies/{id}/apply` (create application, prevent duplicate). References `vacancies` (Module 2) and `candidates` (Module 4). | 🔲 Not started |
+
+### Member 2 — Nimisha (Frontend + remaining backend)
+
+| Item | What's needed | Status |
+|------|--------------|--------|
+| **Frontend — React app** | Vite + React 18 scaffold under `frontend/`. Pages: Login, Register (Employer + Candidate), Employer Dashboard (vacancies CRUD), Candidate Dashboard (profile, job search, applications). Calls existing backend APIs. | 🔲 Not started |
+| **Module 6 — Interview Scheduling** | `POST /api/employer/interviews`, `PUT /api/employer/interviews/{id}/outcome`. Updates `applications.status` automatically. Triggers email via Module 8. | 🔲 Not started |
+| **Module 7 — Reports** | `GET /api/employer/reports/vacancies` (vacancies + applicant counts), `GET /api/employer/reports/interviews`, `GET /api/candidate/reports/applications` | 🔲 Not started |
+| **Module 8 — Email Notifications** | Spring Mail integration. Trigger emails on: registration, interview scheduled, status change (Selected/Rejected/Offered/Recruited). Logs to `notifications` table. | 🔲 Not started |
+
+### Assignment Artifacts Still Due
+
+| # | Artifact | Status |
+|---|----------|--------|
+| 2 | Architecture Diagram | 🔲 Pending |
+| 4 | UI Design / Wireframes | 🔲 Pending |
+| 6 | PPT Presentation | 🔲 Pending |
+
+---
+
+## What's Done So Far
+
+| Version | Module | Owner | Status |
+|---------|--------|-------|--------|
+| v0.1.0 | Project init + all docs (SRS, schema, abstract) | Both | ✅ |
+| v0.2.0 | Module 1 — Registration & Login (JWT auth) | Fassi | ✅ |
+| v0.3.0 | Module 2 — Vacancy Management CRUD | Nimisha | ✅ |
+| v0.4.0 | Module 4 — Candidate Profile & Preferences | Nimisha | ✅ |
+| v0.4.1 | Fix — Lombok removed, compiles on Java 25 + Java 21 | Nimisha | ✅ |
+| v0.4.2 | Fix — SecurityException returns 403 not 500 | Nimisha | ✅ |
+
+---
+
 ## [v0.4.2] — 2026-10-30 — Fix: SecurityException → 403 for unauthorised vacancy access
 
 ### What was done
