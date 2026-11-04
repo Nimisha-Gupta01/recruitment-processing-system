@@ -13,8 +13,9 @@ NAVY = RGBColor(0x1F, 0x38, 0x64)
 BLUE = RGBColor(0x2E, 0x75, 0xB6)
 GRAY = RGBColor(0x40, 0x40, 0x40)
 
-BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT  = os.path.join(BASE, "Artifact4_UI_Design.docx")
+BASE     = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OUT      = os.path.join(BASE, "Artifact4_UI_Design.docx")
+IMG_PATH = "/Users/I578445/Downloads/UI.drawio (1) (1).png"
 
 
 def shade_cell(cell, hex_color):
@@ -82,7 +83,7 @@ def build():
         ("Online Recruitment Processing System",                      16, True,  NAVY),
         ("Artifact 4 — UI Design & Flow",                            13, True,  NAVY),
         ("",                                                          0,  False, GRAY),
-        ("Team: Nimisha Gupta (2025SL70050)  &  Fasi Ahmed Khan J R (2025SL70017)   |   M.Tech — BITS Pilani",   11, False, GRAY),
+        ("Team: Nimisha Gupta (2025SL70050)  &  Fasi Ahmed Khan J R (2025SL70017)   |   M.Tech — BITS Pilani", 11, False, GRAY),
         ("November 2026",                                             11, False, GRAY),
     ]:
         p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -97,92 +98,120 @@ def build():
     heading(doc, "1. Introduction")
     p = doc.add_paragraph()
     p.add_run(
-        "This document describes the planned User Interface design for the Online Recruitment "
-        "Processing System frontend — a React 18 Single-Page Application (SPA). It covers the "
-        "application navigation flow, the full inventory of planned pages, role-based access guards, "
-        "and detailed descriptions of each screen including the form fields, available actions, and "
-        "the backend API calls each screen triggers.\n\n"
-        "The frontend is built using React 18, Vite, React Router v6, Tailwind CSS, and Axios. "
-        "Authentication state is managed via an AuthContext backed by localStorage."
+        "This document describes the User Interface design for the Online Recruitment Processing "
+        "System — a React 18 Single-Page Application (SPA). It covers the complete application "
+        "navigation flow showing how Shared, Employer, and Candidate screens connect, the full "
+        "inventory of planned pages with role-based access guards, and detailed descriptions of "
+        "each screen including form fields, user actions, decision points, and backend API calls.\n\n"
+        "The UI is divided into three swim lanes: Shared screens (Landing, Login, Register), "
+        "Employer screens (Dashboard, Vacancy Management, Candidate Search, View Applications, "
+        "Schedule Interview, Reports), and Candidate screens (Dashboard, My Profile, Job Search, "
+        "My Applications). Email notifications are triggered automatically at key events."
     ).font.size = Pt(11)
-
     doc.add_paragraph()
 
     # ── 2. Application Navigation Flow ────────────────────────────
     heading(doc, "2. Application Navigation Flow")
     p = doc.add_paragraph()
     p.add_run(
-        "The diagram below shows the high-level navigation structure of the application. "
-        "All protected routes check for a valid JWT and the correct role — unauthenticated "
-        "users are redirected to /login."
+        "The diagram below is the full UI flow for the Online Recruitment Processing System. "
+        "It is organised into three swim lanes — Shared, Employer, and Candidate — and shows "
+        "all screens, decision points, and email notification triggers."
     ).font.size = Pt(11)
     doc.add_paragraph()
 
+    # ── Embed the actual UI flow image ────────────────────────────
+    if os.path.exists(IMG_PATH):
+        doc.add_picture(IMG_PATH, width=Inches(6.5))
+        cap = doc.add_paragraph("Figure 1: Online Recruitment Processing System — UI Flow Diagram")
+        cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        for run in cap.runs:
+            run.font.size = Pt(9); run.font.italic = True
+            run.font.color.rgb = RGBColor(0x60, 0x60, 0x60)
+    else:
+        doc.add_paragraph(f"[Image not found at: {IMG_PATH}]")
+
+    doc.add_paragraph()
+
+    # ── 2.1 Flow Summary ───────────────────────────────────────────
+    heading(doc, "2.1 Flow Summary", 2)
+
     FLOW = """\
-                         ┌──────────────────┐
-                         │   / (root)       │
-                         │   → /login       │
-                         └────────┬─────────┘
-               ┌──────────────────┼──────────────────┐
-               │                  │                  │
-   ┌───────────▼──────────┐       │      ┌───────────▼──────────┐
-   │  /register/employer  │       │      │  /register/candidate │
-   └───────────┬──────────┘       │      └───────────┬──────────┘
-               │                  │                  │
-               └─────────┐ ┌──────▼──────┐ ┌────────┘
-                          │ │   /login    │ │
-                          │ └──────┬──────┘ │
-                          └────────┼────────┘
-                                   │
-                    JWT stored in AuthContext / localStorage
-                                   │
-               ┌───────────────────┼───────────────────┐
-               │                                       │
-   ┌───────────▼───────────────┐       ┌───────────────▼───────────┐
-   │   EMPLOYER DASHBOARD      │       │   CANDIDATE DASHBOARD     │
-   │   (requires ROLE_EMPLOYER)│       │  (requires ROLE_CANDIDATE)│
-   └───────────┬───────────────┘       └───────────────┬───────────┘
-               │                                       │
-   ┌───────────▼───────────────┐       ┌───────────────▼───────────┐
-   │ /employer/vacancies       │       │ /candidate/profile        │
-   │ /employer/vacancies/new   │       │ /candidate/vacancies      │
-   │ /employer/vacancies/:id/  │       │ /candidate/applications   │
-   │    edit                   │       │ /candidate/reports        │
-   │ /employer/candidates/     │       └───────────────────────────┘
-   │    search                 │
-   │ /employer/interviews/new  │
-   │ /employer/reports         │
-   └───────────────────────────┘"""
+SHARED SCREENS
+  Landing Page ──Login──► Login Page ──Submit──► [Valid Credentials?]
+                                                       │ Yes            │ No
+               ──Register──► Register Page             │                └──► Show Error
+                                                       │
+                             ┌─────────────────────────┤
+                             │ Yes → Employer           │ Yes → Candidate
+                             ▼                          ▼
+
+EMPLOYER SWIM LANE                        CANDIDATE SWIM LANE
+  Employer Dashboard                        Candidate Dashboard
+       │                                         │
+       ▼                                         ▼
+  Vacancy Management                         My Profile
+  ├─ Post New Vacancy                        ├─ Personal / Academic / Experience
+  └─ Edit / Close Vacancy                    └─ Skills & Preferences (Role/Location/Salary)
+       │                                         │
+       ▼                                         ▼
+  Search Candidates                          Job Search
+  ├─ Filter Candidates                       ├─ Filter Vacancies (Location/Salary/Type)
+  ├─ Ranked Results                          ├─ Vacancy List (ranked by preferences)
+  └─ View Candidate Profile                  └─ Vacancy Detail View
+       │                                              │ Apply
+       ▼                                              ▼
+  View Applications                          [Already Applied?]
+  ├─ Shortlist / Reject                      │ Yes ──► Show: Already Applied
+  └─ triggers ──► Email: New Application     │ No  ──► Apply (1-click, profile auto-submitted)
+       │                                         │
+       ▼                                         ▼
+  Schedule Interview                          My Applications
+  ├─ Interview Form (Date/Mode/Venue)         ├─ Track Application Status
+  └─ Update Outcome (Selected/Rejected...)    └─ Interview History
+       │
+       ▼
+  Reports
+  ├─ Vacancies + Applicant Count
+  ├─ Interview Schedule by Date
+  └─ Selected / Rejected per Vacancy
+
+EMAIL NOTIFICATIONS (triggered automatically — shown as dashed lines in diagram):
+  • Email: Registration        ← on successful registration (employer or candidate)
+  • Email: New Application     ← on candidate applying to a vacancy (sent to employer)
+  • Email: Interview Scheduled ← on employer scheduling an interview (sent to candidate)
+  • Email: Status Change       ← on outcome update Selected/Rejected (sent to candidate)"""
     add_code_block(doc, FLOW)
 
     # ── 3. Planned Pages Inventory ─────────────────────────────────
     heading(doc, "3. Planned Pages Inventory")
     p = doc.add_paragraph()
     p.add_run(
-        "The table below lists all planned pages in the React SPA, their routes, access guards, "
-        "owning module, and primary user action."
+        "The table below lists all planned pages in the React SPA, mapped to swim lanes, "
+        "routes, role guards, owning modules, and primary user actions."
     ).font.size = Pt(11)
     doc.add_paragraph()
 
     PAGES = [
-        ("Login",               "/login",                             "Public",    "1", "Email + password login; returns JWT"),
-        ("Register Employer",   "/register/employer",                 "Public",    "1", "Org + contact details registration"),
-        ("Register Candidate",  "/register/candidate",                "Public",    "1", "Personal + academic details registration"),
-        ("My Vacancies",        "/employer/vacancies",                "EMPLOYER",  "2", "List all vacancies posted by employer"),
-        ("Post Job",            "/employer/vacancies/new",            "EMPLOYER",  "2", "Create a new job vacancy"),
-        ("Edit Vacancy",        "/employer/vacancies/:id/edit",       "EMPLOYER",  "2", "Update vacancy fields or close vacancy"),
-        ("Candidate Search",    "/employer/candidates/search",        "EMPLOYER",  "3", "Filter candidates by skills/location/salary"),
-        ("Candidate Profile",   "/candidate/profile",                 "CANDIDATE", "4", "View and update personal profile + skills"),
-        ("Job List",            "/candidate/vacancies",               "CANDIDATE", "5", "Browse open vacancies with filters"),
-        ("My Applications",     "/candidate/applications",            "CANDIDATE", "5", "Track all submitted applications + status"),
-        ("Schedule Interview",  "/employer/interviews/new",           "EMPLOYER",  "6", "Schedule interview for an applicant"),
-        ("Employer Reports",    "/employer/reports",                  "EMPLOYER",  "7", "Vacancy summaries and interview records"),
-        ("Candidate Reports",   "/candidate/reports",                 "CANDIDATE", "7", "Application history and interview results"),
+        ("Shared",    "Landing Page",         "/",                            "Public",    "—", "Entry point — links to Login and Register"),
+        ("Shared",    "Login",                "/login",                       "Public",    "1",  "Email + password + role; Valid Credentials decision; Show Error on failure"),
+        ("Shared",    "Register Employer",    "/register/employer",           "Public",    "1",  "Org + contact details; triggers Email: Registration"),
+        ("Shared",    "Register Candidate",   "/register/candidate",          "Public",    "1",  "Personal + academic details; triggers Email: Registration"),
+        ("Employer",  "Employer Dashboard",   "/employer/dashboard",          "EMPLOYER",  "1",  "Hub — links to all employer screens"),
+        ("Employer",  "Vacancy Management",   "/employer/vacancies",          "EMPLOYER",  "2",  "Post New Vacancy; Edit / Close Vacancy"),
+        ("Employer",  "Search Candidates",    "/employer/candidates/search",  "EMPLOYER",  "3",  "Filter; Ranked Results; View Candidate Profile"),
+        ("Employer",  "View Applications",    "/employer/applications",       "EMPLOYER",  "5",  "Shortlist / Reject; triggers Email: New Application"),
+        ("Employer",  "Schedule Interview",   "/employer/interviews/new",     "EMPLOYER",  "6",  "Interview Form; Update Outcome; triggers Email: Interview Scheduled / Status Change"),
+        ("Employer",  "Reports",              "/employer/reports",            "EMPLOYER",  "7",  "Vacancies + Applicant Count; Interview Schedule; Selected/Rejected per Vacancy"),
+        ("Candidate", "Candidate Dashboard",  "/candidate/dashboard",         "CANDIDATE", "1",  "Hub — links to all candidate screens"),
+        ("Candidate", "My Profile",           "/candidate/profile",           "CANDIDATE", "4",  "Personal/Academic/Experience; Skills & Preferences"),
+        ("Candidate", "Job Search",           "/candidate/vacancies",         "CANDIDATE", "5",  "Filter; Ranked Vacancy List; Apply (1-click); Already Applied check"),
+        ("Candidate", "My Applications",      "/candidate/applications",      "CANDIDATE", "5",  "Track Application Status; Interview History"),
     ]
 
-    tbl = doc.add_table(rows=1, cols=5)
+    tbl = doc.add_table(rows=1, cols=6)
     tbl.style = "Table Grid"
-    hdr_row(tbl, "Page", "Route", "Role Guard", "Module", "Primary Action")
+    hdr_row(tbl, "Lane", "Page", "Route", "Guard", "Mod.", "Primary Action")
     for row in PAGES:
         add_row(tbl, *row)
 
@@ -192,158 +221,179 @@ def build():
     heading(doc, "4. Screen Descriptions")
     p = doc.add_paragraph()
     p.add_run(
-        "Each screen below is described with its route, role guard, input fields or displayed data, "
-        "available user actions, and the backend API endpoint invoked."
+        "Each screen is described with its swim lane, route, role guard, form fields, "
+        "decision points, actions, and backend API calls."
     ).font.size = Pt(11)
     doc.add_paragraph()
 
     SCREENS = [
         {
-            "name": "4.1  Login",
-            "route": "/login",
-            "guard": "Public — redirects to dashboard if already authenticated",
-            "fields": ["Email (text input)", "Password (password input)", "Role selector — Employer / Candidate"],
-            "actions": ["Submit → POST /api/auth/login → JWT stored in localStorage and AuthContext",
-                        "Link: Register as Employer → /register/employer",
-                        "Link: Register as Candidate → /register/candidate"],
-            "on_success": "ROLE_EMPLOYER → /employer/vacancies  |  ROLE_CANDIDATE → /candidate/profile",
+            "name": "4.1  Landing Page",
+            "lane": "Shared", "route": "/", "guard": "Public",
+            "fields": ["Navigation links: Login, Register as Employer, Register as Candidate"],
+            "actions": ["Click Login → /login",
+                        "Click Register → /register/employer  or  /register/candidate"],
+            "api": [],
         },
         {
-            "name": "4.2  Register Employer",
-            "route": "/register/employer",
-            "guard": "Public",
+            "name": "4.2  Login Page",
+            "lane": "Shared", "route": "/login", "guard": "Public — redirects to dashboard if already authenticated",
+            "fields": ["Email (text input)", "Password (password input)",
+                       "Role selector — Employer / Candidate", "Submit button"],
+            "actions": ["Submit → POST /api/auth/login",
+                        "[Valid Credentials?] decision point:",
+                        "  Yes + EMPLOYER → redirect /employer/dashboard",
+                        "  Yes + CANDIDATE → redirect /candidate/dashboard",
+                        "  No → Show Error message inline (Go to Login link shown)"],
+            "api": ["POST /api/auth/login → returns { token, role, userId, name }"],
+        },
+        {
+            "name": "4.3  Register Employer",
+            "lane": "Shared", "route": "/register/employer", "guard": "Public",
             "fields": ["Organisation Name* (required)", "Contact Name* (required)",
                        "Email* (required)", "Password* (min 6 chars)",
                        "Phone, Address, Website, Established Year, Num Employees, Annual Turnover (optional)"],
-            "actions": ["Submit → POST /api/auth/register/employer → JWT returned immediately"],
-            "on_success": "Redirect to /employer/vacancies",
+            "actions": ["Submit → POST /api/auth/register/employer",
+                        "On success → JWT stored; redirect /employer/dashboard",
+                        "Triggers: Email: Registration sent to employer"],
+            "api": ["POST /api/auth/register/employer → AuthResponse"],
         },
         {
-            "name": "4.3  Register Candidate",
-            "route": "/register/candidate",
-            "guard": "Public",
+            "name": "4.4  Register Candidate",
+            "lane": "Shared", "route": "/register/candidate", "guard": "Public",
             "fields": ["Full Name* (required)", "Email* (required)", "Password* (min 6 chars)",
                        "Phone, Date of Birth, Gender, Address (optional)",
-                       "Degree, Institution, Year of Passing, Percentage (optional academic)",
+                       "Degree, Institution, Year of Passing, Percentage (optional)",
                        "Total Experience Years, Expected Salary Min/Max (optional)"],
-            "actions": ["Submit → POST /api/auth/register/candidate → JWT returned immediately"],
-            "on_success": "Redirect to /candidate/profile",
+            "actions": ["Submit → POST /api/auth/register/candidate",
+                        "On success → JWT stored; redirect /candidate/dashboard",
+                        "Triggers: Email: Registration sent to candidate"],
+            "api": ["POST /api/auth/register/candidate → AuthResponse"],
         },
         {
-            "name": "4.4  My Vacancies (Employer Dashboard)",
-            "route": "/employer/vacancies",
-            "guard": "ROLE_EMPLOYER required",
+            "name": "4.5  Employer Dashboard",
+            "lane": "Employer", "route": "/employer/dashboard", "guard": "ROLE_EMPLOYER required",
+            "fields": ["Summary cards: Total Vacancies, Total Applications, Interviews Scheduled",
+                       "Quick navigation to: Vacancy Management, Search Candidates, View Applications, Schedule Interview, Reports"],
+            "actions": ["Navigate to any employer screen"],
+            "api": [],
+        },
+        {
+            "name": "4.6  Vacancy Management",
+            "lane": "Employer", "route": "/employer/vacancies", "guard": "ROLE_EMPLOYER required",
             "fields": ["Table: Designation, Department, Status, Posted Date, Salary Range, Openings"],
-            "actions": ["Click Post New Job → /employer/vacancies/new",
-                        "Click Edit → /employer/vacancies/:id/edit",
-                        "Click Close → PATCH /api/employer/vacancies/:id/close"],
-            "on_success": "GET /api/employer/vacancies — lists only this employer's vacancies",
-        },
-        {
-            "name": "4.5  Post Job",
-            "route": "/employer/vacancies/new",
-            "guard": "ROLE_EMPLOYER required",
-            "fields": ["Designation* (required)", "Employment Type* (Permanent/Temporary/Contract)",
-                       "Department, Job Description, Required Qualification, Required Experience",
-                       "Salary Min/Max, Number of Openings, Location, Application Deadline (optional)"],
-            "actions": ["Submit → POST /api/employer/vacancies → returns 201 Created"],
-            "on_success": "Redirect to /employer/vacancies",
-        },
-        {
-            "name": "4.6  Edit Vacancy",
-            "route": "/employer/vacancies/:id/edit",
-            "guard": "ROLE_EMPLOYER required; ownership enforced server-side",
-            "fields": ["Pre-filled with existing vacancy data (GET /api/employer/vacancies/:id)",
-                       "All fields editable including Status (Open / On_Hold / Closed)"],
-            "actions": ["Save → PUT /api/employer/vacancies/:id (partial update — only changed fields sent)",
+            "actions": ["Post New Vacancy → form → POST /api/employer/vacancies (201 Created)",
+                        "Edit Vacancy → pre-filled form → PUT /api/employer/vacancies/:id",
                         "Close Vacancy → PATCH /api/employer/vacancies/:id/close"],
-            "on_success": "Updated vacancy reflected in My Vacancies list",
+            "api": ["GET /api/employer/vacancies",
+                    "POST /api/employer/vacancies",
+                    "PUT /api/employer/vacancies/:id",
+                    "PATCH /api/employer/vacancies/:id/close"],
         },
         {
-            "name": "4.7  Candidate Search",
-            "route": "/employer/candidates/search",
-            "guard": "ROLE_EMPLOYER required",
-            "fields": ["Filter inputs: Preferred Role, Location, Salary Min, Salary Max, Qualification, Min Percentage"],
-            "actions": ["Search → GET /api/employer/candidates/search (query params)",
-                        "View Profile → GET /api/employer/candidates/:id"],
-            "on_success": "Ranked list of matching candidates displayed",
+            "name": "4.7  Search Candidates",
+            "lane": "Employer", "route": "/employer/candidates/search", "guard": "ROLE_EMPLOYER required",
+            "fields": ["Filter inputs: Preferred Role, Location, Salary Min/Max, Qualification, Min Percentage"],
+            "actions": ["Filter Candidates → returns Ranked Results (higher merit / closer preference match first)",
+                        "View Candidate Profile → full profile with skills and preferences"],
+            "api": ["GET /api/employer/candidates/search?role=&location=&salaryMin=&salaryMax=&qualification=&minPercentage=",
+                    "GET /api/employer/candidates/:id"],
         },
         {
-            "name": "4.8  Candidate Profile",
-            "route": "/candidate/profile",
-            "guard": "ROLE_CANDIDATE required",
-            "fields": ["Personal: Full Name, Phone, Date of Birth, Gender, Address",
-                       "Academic: Degree, Institution, Year of Passing, Percentage",
-                       "Experience: Total Years, Expected Salary Range",
-                       "Skills: Skill Name + Proficiency (Beginner/Intermediate/Expert) — multiple entries",
-                       "Location Preferences: list of preferred cities",
-                       "Role Preferences: list of preferred job roles"],
-            "actions": ["Load → GET /api/candidate/profile",
-                        "Save → PUT /api/candidate/profile (partial update; skills/prefs fully replaced)"],
-            "on_success": "Profile updated; confirmation message shown",
+            "name": "4.8  View Applications",
+            "lane": "Employer", "route": "/employer/applications", "guard": "ROLE_EMPLOYER required",
+            "fields": ["Table: Candidate Name, Applied Vacancy, Applied Date, Current Status, Cover Note"],
+            "actions": ["Shortlist → update status to Shortlisted",
+                        "Reject → update status to Rejected",
+                        "Triggers: Email: New Application → sent to employer when a new application arrives"],
+            "api": ["GET /api/employer/applications",
+                    "PUT /api/employer/applications/:id/status"],
         },
         {
-            "name": "4.9  Job List",
-            "route": "/candidate/vacancies",
-            "guard": "ROLE_CANDIDATE required",
-            "fields": ["Filter inputs: Location, Salary Min, Salary Max, Employment Type, Qualification",
-                       "Results: Designation, Organisation, Location, Salary, Employment Type, Deadline, Status"],
-            "actions": ["Filter → GET /api/candidate/vacancies (query params)",
-                        "Apply → POST /api/candidate/vacancies/:id/apply (with optional cover note)"],
-            "on_success": "Application created (status: Applied); button disabled to prevent re-apply",
+            "name": "4.9  Schedule Interview",
+            "lane": "Employer", "route": "/employer/interviews/new", "guard": "ROLE_EMPLOYER required",
+            "fields": ["Application selector (candidate + vacancy)",
+                       "Interview Date & Time* (required)",
+                       "Mode* — In-Person / Online / Telephonic",
+                       "Venue, Round Number, Interviewer Name, Remarks (optional)"],
+            "actions": ["Submit Interview Form → POST /api/employer/interviews",
+                        "  → Application status auto-updates to 'Interview Scheduled'",
+                        "  → Triggers: Email: Interview Scheduled sent to candidate",
+                        "Update Outcome → PUT /api/employer/interviews/:id/outcome",
+                        "  Outcomes: Selected / Rejected / Completed / Cancelled",
+                        "  → Triggers: Email: Status Change sent to candidate on Selected/Rejected"],
+            "api": ["POST /api/employer/interviews",
+                    "PUT /api/employer/interviews/:id/outcome"],
         },
         {
-            "name": "4.10  My Applications",
-            "route": "/candidate/applications",
-            "guard": "ROLE_CANDIDATE required",
-            "fields": ["Table: Vacancy Title, Organisation, Applied Date, Current Status, Cover Note"],
-            "actions": ["Load → GET /api/candidate/applications",
-                        "View details → expands to show interview schedule if any"],
-            "on_success": "Status updates (Shortlisted, Interview Scheduled, Selected, Rejected) reflected in real time",
-        },
-        {
-            "name": "4.11  Schedule Interview",
-            "route": "/employer/interviews/new",
-            "guard": "ROLE_EMPLOYER required",
-            "fields": ["Application selector (candidate + vacancy)", "Interview Date & Time*",
-                       "Mode* (In-Person / Online / Telephonic)", "Venue, Round Number, Interviewer Name, Remarks (optional)"],
-            "actions": ["Submit → POST /api/employer/interviews",
-                        "Application status auto-updates to 'Interview Scheduled'",
-                        "Email notification sent to candidate"],
-            "on_success": "Interview record created; shown in employer's interview list",
-        },
-        {
-            "name": "4.12  Employer Reports",
-            "route": "/employer/reports",
-            "guard": "ROLE_EMPLOYER required",
+            "name": "4.10  Reports",
+            "lane": "Employer", "route": "/employer/reports", "guard": "ROLE_EMPLOYER required",
             "fields": ["Date range filter for interviews", "Vacancy selector"],
-            "actions": ["Vacancies Report → GET /api/employer/reports/vacancies",
-                        "Interviews Report → GET /api/employer/reports/interviews"],
-            "on_success": "Tables showing applicant counts, interview outcomes, selected/rejected counts per vacancy",
+            "actions": ["Vacancies + Applicant Count → GET /api/employer/reports/vacancies",
+                        "Interview Schedule by Date → GET /api/employer/reports/interviews",
+                        "Selected / Rejected per Vacancy → included in vacancy report"],
+            "api": ["GET /api/employer/reports/vacancies",
+                    "GET /api/employer/reports/interviews"],
         },
         {
-            "name": "4.13  Candidate Reports",
-            "route": "/candidate/reports",
-            "guard": "ROLE_CANDIDATE required",
-            "fields": ["Application history with status timeline"],
-            "actions": ["Load → GET /api/candidate/reports/applications"],
-            "on_success": "Full application history with interview details per application",
+            "name": "4.11  Candidate Dashboard",
+            "lane": "Candidate", "route": "/candidate/dashboard", "guard": "ROLE_CANDIDATE required",
+            "fields": ["Summary: Profile Completeness, Active Applications, Upcoming Interviews"],
+            "actions": ["Navigate to My Profile, Job Search, My Applications"],
+            "api": [],
+        },
+        {
+            "name": "4.12  My Profile",
+            "lane": "Candidate", "route": "/candidate/profile", "guard": "ROLE_CANDIDATE required",
+            "fields": ["Personal / Academic / Experience: Full Name, Phone, DOB, Gender, Address, Degree, Institution, Year of Passing, Percentage, Total Exp Years, Expected Salary",
+                       "Skills & Preferences: Skill Name + Proficiency (Beginner/Intermediate/Expert); Preferred Locations (cities); Preferred Roles (job titles)"],
+            "actions": ["Load profile → GET /api/candidate/profile",
+                        "Save → PUT /api/candidate/profile (partial update; skills & prefs fully replaced on each save)"],
+            "api": ["GET /api/candidate/profile",
+                    "PUT /api/candidate/profile"],
+        },
+        {
+            "name": "4.13  Job Search",
+            "lane": "Candidate", "route": "/candidate/vacancies", "guard": "ROLE_CANDIDATE required",
+            "fields": ["Filter Vacancies: Location, Salary Min/Max, Employment Type",
+                       "Vacancy List: ranked by candidate's stored role and location preferences",
+                       "Vacancy Detail View: full job description, requirements, salary, deadline"],
+            "actions": ["Filter → GET /api/candidate/vacancies (query params)",
+                        "Click Vacancy → Vacancy Detail View",
+                        "Click Apply → [Already Applied?] decision point:",
+                        "  Yes → Show: Already Applied (button disabled, error shown)",
+                        "  No  → Apply (1-click) — profile auto-submitted",
+                        "        → POST /api/candidate/vacancies/:id/apply"],
+            "api": ["GET /api/candidate/vacancies",
+                    "POST /api/candidate/vacancies/:id/apply → 201 Created  |  409 Conflict if duplicate"],
+        },
+        {
+            "name": "4.14  My Applications",
+            "lane": "Candidate", "route": "/candidate/applications", "guard": "ROLE_CANDIDATE required",
+            "fields": ["Table: Vacancy Title, Organisation, Applied Date, Current Status",
+                       "Interview History per application: Date, Mode, Venue, Round, Outcome"],
+            "actions": ["Track Application Status → GET /api/candidate/applications",
+                        "Receives: Email: Interview Scheduled (triggered by employer)",
+                        "Receives: Email: Status Change (on Selected/Rejected outcome)"],
+            "api": ["GET /api/candidate/applications",
+                    "GET /api/candidate/applications/:id/interviews"],
         },
     ]
 
     for screen in SCREENS:
         heading(doc, screen["name"], 3)
 
-        info_tbl = doc.add_table(rows=2, cols=2)
+        info_tbl = doc.add_table(rows=3, cols=2)
         info_tbl.style = "Table Grid"
-        r0 = info_tbl.rows[0].cells
-        r0[0].text = "Route"; r0[1].text = screen["route"]
-        r1 = info_tbl.rows[1].cells
-        r1[0].text = "Role Guard"; r1[1].text = screen["guard"]
-        for row in info_tbl.rows:
-            row.cells[0].paragraphs[0].runs[0].bold = True
-            shade_cell(row.cells[0], "EBF3FB")
-            for c in row.cells:
+        for i, (lbl, val) in enumerate(zip(
+            ["Route", "Swim Lane", "Role Guard"],
+            [screen["route"], screen["lane"], screen["guard"]]
+        )):
+            info_tbl.rows[i].cells[0].text = lbl
+            info_tbl.rows[i].cells[1].text = val
+            info_tbl.rows[i].cells[0].paragraphs[0].runs[0].bold = True
+            shade_cell(info_tbl.rows[i].cells[0], "EBF3FB")
+            for c in info_tbl.rows[i].cells:
                 for para in c.paragraphs:
                     for run in para.runs: run.font.size = Pt(10)
 
@@ -359,18 +409,21 @@ def build():
         doc.add_paragraph()
 
         p2 = doc.add_paragraph()
-        r2 = p2.add_run("Actions & API Calls")
+        r2 = p2.add_run("Actions, Decision Points & API Calls")
         r2.bold = True; r2.font.size = Pt(10); r2.font.color.rgb = NAVY
         for action in screen["actions"]:
             ap = doc.add_paragraph(style="List Bullet")
             ap.add_run(action).font.size = Pt(10)
 
-        if "on_success" in screen:
+        if screen["api"]:
             doc.add_paragraph()
             p3 = doc.add_paragraph()
-            p3.add_run("On Success:  ").bold = True
-            p3.add_run(screen["on_success"]).font.size = Pt(10)
+            p3.add_run("Backend APIs:").bold = True
             for run in p3.runs: run.font.size = Pt(10)
+            for api in screen["api"]:
+                ap = doc.add_paragraph(style="List Bullet")
+                run = ap.add_run(api)
+                run.font.name = "Courier New"; run.font.size = Pt(9)
 
         doc.add_paragraph()
 
@@ -379,12 +432,12 @@ def build():
     p = doc.add_paragraph()
     p.add_run(
         "All protected pages are wrapped with a PrivateRoute component that checks both "
-        "the presence of a valid token and the user's role. If either check fails, the user "
-        "is redirected to the login page."
+        "the presence of a valid JWT and the user's role. If either check fails, the user "
+        "is redirected to /login."
     ).font.size = Pt(11)
     doc.add_paragraph()
 
-    PRIVATE_ROUTE = """\
+    add_code_block(doc, """\
 function PrivateRoute({ children, role }) {
   const { auth } = useAuth()           // reads from AuthContext (backed by localStorage)
   if (!auth) return <Navigate to="/login" replace />
@@ -394,21 +447,41 @@ function PrivateRoute({ children, role }) {
 
 // Usage in App.jsx:
 // <Route path="/employer/vacancies" element={
-//   <PrivateRoute role="EMPLOYER"><MyVacancies /></PrivateRoute>
-// } />"""
-    add_code_block(doc, PRIVATE_ROUTE)
+//   <PrivateRoute role="EMPLOYER"><VacancyManagement /></PrivateRoute>
+// } />""")
 
-    # ── 6. Authentication State Flow ──────────────────────────────
-    heading(doc, "6. Authentication State Flow")
-    STEPS = [
+    # ── 6. Email Notification Triggers ────────────────────────────
+    heading(doc, "6. Email Notification Triggers")
+    p = doc.add_paragraph()
+    p.add_run(
+        "The following email notifications are triggered automatically at key points in the UI flow "
+        "(shown as dashed yellow ovals in the diagram). All are logged in the notifications table."
+    ).font.size = Pt(11)
+    doc.add_paragraph()
+
+    tbl = doc.add_table(rows=1, cols=3)
+    tbl.style = "Table Grid"
+    hdr_row(tbl, "Notification", "Trigger Event", "API Endpoint")
+    for row in [
+        ("Email: Registration",        "Successful employer or candidate registration",                    "POST /api/auth/register/*"),
+        ("Email: New Application",     "Candidate applies to a vacancy — sent to employer",               "POST /api/candidate/vacancies/:id/apply"),
+        ("Email: Interview Scheduled", "Employer schedules an interview — sent to candidate",              "POST /api/employer/interviews"),
+        ("Email: Status Change",       "Interview outcome updated (Selected/Rejected) — sent to candidate","PUT /api/employer/interviews/:id/outcome"),
+    ]:
+        add_row(tbl, *row)
+
+    doc.add_paragraph()
+
+    # ── 7. Authentication State Flow ──────────────────────────────
+    heading(doc, "7. Authentication State Flow")
+    for i, step in enumerate([
         "User submits login form → POST /api/auth/login returns { token, role, userId, name }",
-        "AuthContext stores { token, role, userId, name } in React state and persists token to localStorage",
-        "Axios interceptor (src/api/api.js) reads token from localStorage and adds Authorization: Bearer <token> to every outgoing request",
-        "On app reload, AuthContext reads localStorage to restore auth state — user stays logged in across browser refreshes",
-        "Logout: AuthContext.logout() clears localStorage and resets state → user is redirected to /login",
-        "Vite dev proxy forwards /api/* requests from port 3000 to Spring Boot on port 8080 — no CORS issues during development",
-    ]
-    for i, step in enumerate(STEPS, 1):
+        "AuthContext stores token in React state and persists to localStorage",
+        "Axios interceptor adds Authorization: Bearer <token> to every outgoing request",
+        "On app reload, AuthContext reads localStorage to restore auth state across refreshes",
+        "Logout: AuthContext.logout() clears localStorage → user redirected to /login",
+        "Vite dev proxy forwards /api/* from port 3000 to Spring Boot port 8080 — no CORS issues",
+    ], 1):
         p = doc.add_paragraph(style="List Number")
         p.add_run(step).font.size = Pt(11)
 
