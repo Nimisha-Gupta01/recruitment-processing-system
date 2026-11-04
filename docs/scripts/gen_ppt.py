@@ -155,7 +155,7 @@ def slide_title(prs):
     for txt, y, sz in [
         ("Full Stack Application Development (FSAD)", Inches(3.0), 18),
         ("BITS Pilani — Work Integrated Learning Programmes (WILP)", Inches(3.55), 16),
-        ("Nimisha Gupta  &  Fassi  |  M.Tech  |  November 2026",    Inches(4.1),  15),
+        ("Nimisha Gupta (2025SL70050)  &  Fassi Ahmed Khan J R (2025SL70017)  |  M.Tech  |  November 2026",    Inches(4.1),  15),
     ]:
         add_textbox(s, Inches(0.5), y, Inches(12.3), Inches(0.55),
                     txt, font_size=sz, color=LGRAY, align=PP_ALIGN.CENTER)
@@ -330,15 +330,15 @@ def slide_status(prs):
     slide_header(s, "Implementation Status & Roadmap")
 
     STATUS = [
-        ("Module 1 — Registration & Login",       "Fassi",   "✅ Complete"),
-        ("Module 2 — Vacancy Management",          "Nimisha", "✅ Complete"),
-        ("Module 4 — Candidate Profile & Prefs",  "Nimisha", "✅ Complete"),
-        ("Frontend — React SPA",                   "Nimisha", "🔄 In Development"),
-        ("Module 3 — Candidate Search",            "Fassi",   "📋 Planned"),
-        ("Module 5 — Job Search & Apply",          "Fassi",   "📋 Planned"),
-        ("Module 6 — Interview Scheduling",        "Nimisha", "📋 Planned"),
-        ("Module 7 — Reports",                     "Nimisha", "📋 Planned"),
-        ("Module 8 — Email Notifications",         "Nimisha", "📋 Planned"),
+        ("Module 1 — Registration & Login",       "Fassi Ahmed Khan J R (2025SL70017)",   "✅ Complete"),
+        ("Module 2 — Vacancy Management",          "Nimisha Gupta (2025SL70050)", "✅ Complete"),
+        ("Module 4 — Candidate Profile & Prefs",  "Nimisha Gupta (2025SL70050)", "✅ Complete"),
+        ("Frontend — React SPA",                   "Nimisha Gupta (2025SL70050)", "🔄 In Development"),
+        ("Module 3 — Candidate Search",            "Fassi Ahmed Khan J R (2025SL70017)",   "📋 Planned"),
+        ("Module 5 — Job Search & Apply",          "Fassi Ahmed Khan J R (2025SL70017)",   "📋 Planned"),
+        ("Module 6 — Interview Scheduling",        "Nimisha Gupta (2025SL70050)", "📋 Planned"),
+        ("Module 7 — Reports",                     "Nimisha Gupta (2025SL70050)", "📋 Planned"),
+        ("Module 8 — Email Notifications",         "Nimisha Gupta (2025SL70050)", "📋 Planned"),
     ]
     add_table(s, ["Component", "Owner", "Status"],
               STATUS, Inches(0.3), Inches(1.6), Inches(12.7), Inches(5.55),
