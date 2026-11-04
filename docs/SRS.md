@@ -25,8 +25,7 @@
 10. [Frontend Architecture](#10-frontend-architecture)
 11. [Use Cases](#11-use-cases)
 12. [Implementation Status](#12-implementation-status)
-13. [Tech Stack](#13-tech-stack)
-14. [Appendix](#14-appendix)
+13. [Appendix](#13-appendix)
 
 ---
 
@@ -928,51 +927,18 @@ All implemented modules compile and run. Verified via `mvn compile` (BUILD SUCCE
 
 The React frontend is being built under the `frontend/` directory as part of the current development sprint. Member 2 (Nimisha) owns the frontend. The full page inventory, routing strategy, and component architecture are documented in Section 10.
 
-### 12.4 Fixes Applied to This Branch
-
-| Version | Fix | Detail |
-|---------|-----|--------|
-| v0.3.0 | DB schema: vacancy status enum | `'On Hold'` → `'On_Hold'` to match Java enum naming (spaces not valid in Java enum identifiers) |
-| v0.4.1 | Lombok annotations removed | `@Data` removed from all entities and DTOs; replaced with explicit getters/setters. Lombok dependency remains in `pom.xml` (declared but unused). This ensures the project compiles on both Java 21 and Java 25 without switching JVMs. |
-| v0.4.2 | 403 for ownership violations | `GlobalExceptionHandler` now catches `SecurityException` → HTTP 403. Previously `VacancyService.assertOwner` threw `SecurityException` which went unhandled → HTTP 500. |
-
 ---
 
-## 13. Tech Stack
+## 13. Appendix
 
-| Layer | Technology | Version |
-|-------|-----------|---------|
-| Language | Java (SapMachine LTS) | 21 (also compatible with Java 25) |
-| Framework | Spring Boot | 3.3.4 |
-| REST | Spring MVC | Bundled with Spring Boot 3.3.4 |
-| ORM | Spring Data JPA + Hibernate | 6.x (bundled with Spring Boot 3.3.4) |
-| Security | Spring Security | 6.x (bundled with Spring Boot 3.3.4) |
-| JWT | jjwt (`jjwt-api`, `jjwt-impl`, `jjwt-jackson`) | 0.12.6 |
-| Database | MySQL | 8.0 |
-| DB Driver | mysql-connector-j | Managed by Spring Boot BOM |
-| Validation | Spring Starter Validation (Jakarta Validation) | Bundled |
-| Email | Spring Mail (JavaMail) | Bundled |
-| Build | Maven | 3.9+ |
-| Frontend Framework | React | 18.x |
-| Frontend Build | Vite | Latest |
-| Frontend Routing | React Router | v6 |
-| HTTP Client | Axios | Latest |
-| CSS Framework | Tailwind CSS | 3.x |
-| CSS Processing | PostCSS + Autoprefixer | Latest |
-| Package Manager | npm | Latest (Node.js 18+) |
-
----
-
-## 14. Appendix
-
-### 14.1 Team Responsibility Split
+### 13.1 Team Responsibility Split
 
 | Member | Modules Owned | Backend | Frontend |
 |--------|--------------|---------|----------|
 | **Fassi** | 1 (Auth), 3 (Candidate Search), 5 (Job Search & Apply) | `AuthController`, `AuthService`, `AuthDTOs`, `JwtUtil`, `JwtAuthFilter`, `SecurityConfig`; future: `CandidateSearchController`, `JobController`, `ApplicationService` | Login, Register pages, `CandidateSearch.jsx`, `JobList.jsx`, `MyApplications.jsx` |
 | **Nimisha** | 2 (Vacancy Mgmt), 4 (Candidate Profile), 6 (Interview), 7 (Reports), 8 (Email) + Frontend overall | `VacancyController`, `CandidateController` + services; future: `InterviewController`, `ReportController`, `NotificationService` | All frontend pages |
 
-### 14.2 Running the Project
+### 13.2 Running the Project
 
 **Prerequisites:** Java 21+, Maven 3.9+, MySQL 8.0, Node.js 18+ (for frontend when added)
 
@@ -1020,7 +986,7 @@ curl -s -X POST http://localhost:8080/api/auth/login \
 - Employer: `hr@techcorp.com` / `Test@1234`
 - Candidate: `priya@example.com` / `Test@1234`
 
-### 14.3 Project File Structure (Current State)
+### 13.3 Project File Structure (Current State)
 
 ```
 recruitment-processing-system/
@@ -1077,7 +1043,7 @@ recruitment-processing-system/
 └── README.md                               # Setup and API reference
 ```
 
-### 14.4 Document History
+### 13.4 Document History
 
 | Version | Date | Changes |
 |---------|------|---------|
