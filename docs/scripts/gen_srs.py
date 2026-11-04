@@ -101,7 +101,7 @@ def build():
         ("Online Recruitment Processing System",                      16, True,  NAVY),
         ("",                                                           0, False, GRAY),
         ("Document Version: 2.2   |   Standard: IEEE 830-1998",      11, False, GRAY),
-        ("Team: Nimisha Gupta (2025SL70050)  &  Fassi Ahmed Khan J R (2025SL70017)   |   M.Tech — BITS Pilani",   11, False, GRAY),
+        ("Team: Nimisha Gupta (2025SL70050)  &  Fasi Ahmed Khan J R (2025SL70017)   |   M.Tech — BITS Pilani",   11, False, GRAY),
         ("November 2026",                                             11, False, GRAY),
     ]:
         p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -436,11 +436,11 @@ Signature: HMAC-SHA256(base64url(header) + "." + base64url(payload), secret)"""
     table(doc,
           ["#", "Module", "Status", "Owner", "Key Backend Classes"],
           [
-              ("1", "Registration & Login",           "Done",    "Fassi Ahmed Khan J R (2025SL70017)",   "AuthController, AuthService, AuthDTOs, JwtUtil, JwtAuthFilter, SecurityConfig"),
+              ("1", "Registration & Login",           "Done",    "Fasi Ahmed Khan J R (2025SL70017)",   "AuthController, AuthService, AuthDTOs, JwtUtil, JwtAuthFilter, SecurityConfig"),
               ("2", "Vacancy Management",              "Done",    "Nimisha Gupta (2025SL70050)", "VacancyController, VacancyService, VacancyDTOs, Vacancy, VacancyRepository"),
-              ("3", "Candidate Search",                "Planned", "Fassi Ahmed Khan J R (2025SL70017)",   "CandidateSearchController, CandidateSearchService"),
+              ("3", "Candidate Search",                "Planned", "Fasi Ahmed Khan J R (2025SL70017)",   "CandidateSearchController, CandidateSearchService"),
               ("4", "Candidate Profile & Preferences", "Done",    "Nimisha Gupta (2025SL70050)", "CandidateController, CandidateService, CandidateDTOs, 3x Pref Repositories"),
-              ("5", "Job Search & Apply",              "Planned", "Fassi Ahmed Khan J R (2025SL70017)",   "JobController, ApplicationService"),
+              ("5", "Job Search & Apply",              "Planned", "Fasi Ahmed Khan J R (2025SL70017)",   "JobController, ApplicationService"),
               ("6", "Interview Scheduling",            "Planned", "Nimisha Gupta (2025SL70050)", "InterviewController, InterviewService"),
               ("7", "Reports",                         "Planned", "Nimisha Gupta (2025SL70050)", "ReportController, ReportService"),
               ("8", "Email Notifications",             "Planned", "Nimisha Gupta (2025SL70050)", "NotificationService (Spring Mail)"),
@@ -828,8 +828,8 @@ Cardinalities:
     table(doc,
           ["Module", "#", "Owner", "Depends On"],
           [
-              ("Candidate Search",     "3", "Fassi Ahmed Khan J R (2025SL70017)",   "Modules 1, 4 (candidates + prefs populated)"),
-              ("Job Search & Apply",   "5", "Fassi Ahmed Khan J R (2025SL70017)",   "Modules 1, 2, 4"),
+              ("Candidate Search",     "3", "Fasi Ahmed Khan J R (2025SL70017)",   "Modules 1, 4 (candidates + prefs populated)"),
+              ("Job Search & Apply",   "5", "Fasi Ahmed Khan J R (2025SL70017)",   "Modules 1, 2, 4"),
               ("Interview Scheduling", "6", "Nimisha Gupta (2025SL70050)", "Module 5 (applications must exist)"),
               ("Reports",              "7", "Nimisha Gupta (2025SL70050)", "Modules 2–6"),
               ("Email Notifications",  "8", "Nimisha Gupta (2025SL70050)", "Modules 1, 5, 6"),
@@ -849,7 +849,7 @@ Cardinalities:
     table(doc,
           ["Member", "Modules Owned", "Backend", "Frontend"],
           [
-              ("Fassi Ahmed Khan J R (2025SL70017)",   "1 (Auth), 3 (Candidate Search), 5 (Job Search & Apply)",
+              ("Fasi Ahmed Khan J R (2025SL70017)",   "1 (Auth), 3 (Candidate Search), 5 (Job Search & Apply)",
                "AuthController, AuthService, AuthDTOs, JwtUtil, JwtAuthFilter, SecurityConfig; future: CandidateSearchController, JobController, ApplicationService",
                "Login, Register pages, CandidateSearch.jsx, JobList.jsx, MyApplications.jsx"),
               ("Nimisha Gupta (2025SL70050)", "2 (Vacancy Mgmt), 4 (Candidate Profile), 6 (Interview), 7 (Reports), 8 (Email) + Frontend overall",

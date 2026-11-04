@@ -82,7 +82,7 @@ def build():
         ("Online Recruitment Processing System",                      16, True,  NAVY),
         ("Artifact 4 — UI Design & Flow",                            13, True,  NAVY),
         ("",                                                          0,  False, GRAY),
-        ("Team: Nimisha Gupta (2025SL70050)  &  Fassi Ahmed Khan J R (2025SL70017)   |   M.Tech — BITS Pilani",   11, False, GRAY),
+        ("Team: Nimisha Gupta (2025SL70050)  &  Fasi Ahmed Khan J R (2025SL70017)   |   M.Tech — BITS Pilani",   11, False, GRAY),
         ("November 2026",                                             11, False, GRAY),
     ]:
         p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER
