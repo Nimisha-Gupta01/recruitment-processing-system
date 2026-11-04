@@ -133,56 +133,6 @@ def build():
 
     doc.add_paragraph()
 
-    # ── 2.1 Flow Summary ───────────────────────────────────────────
-    heading(doc, "2.1 Flow Summary", 2)
-
-    FLOW = """\
-SHARED SCREENS
-  Landing Page ──Login──► Login Page ──Submit──► [Valid Credentials?]
-                                                       │ Yes            │ No
-               ──Register──► Register Page             │                └──► Show Error
-                                                       │
-                             ┌─────────────────────────┤
-                             │ Yes → Employer           │ Yes → Candidate
-                             ▼                          ▼
-
-EMPLOYER SWIM LANE                        CANDIDATE SWIM LANE
-  Employer Dashboard                        Candidate Dashboard
-       │                                         │
-       ▼                                         ▼
-  Vacancy Management                         My Profile
-  ├─ Post New Vacancy                        ├─ Personal / Academic / Experience
-  └─ Edit / Close Vacancy                    └─ Skills & Preferences (Role/Location/Salary)
-       │                                         │
-       ▼                                         ▼
-  Search Candidates                          Job Search
-  ├─ Filter Candidates                       ├─ Filter Vacancies (Location/Salary/Type)
-  ├─ Ranked Results                          ├─ Vacancy List (ranked by preferences)
-  └─ View Candidate Profile                  └─ Vacancy Detail View
-       │                                              │ Apply
-       ▼                                              ▼
-  View Applications                          [Already Applied?]
-  ├─ Shortlist / Reject                      │ Yes ──► Show: Already Applied
-  └─ triggers ──► Email: New Application     │ No  ──► Apply (1-click, profile auto-submitted)
-       │                                         │
-       ▼                                         ▼
-  Schedule Interview                          My Applications
-  ├─ Interview Form (Date/Mode/Venue)         ├─ Track Application Status
-  └─ Update Outcome (Selected/Rejected...)    └─ Interview History
-       │
-       ▼
-  Reports
-  ├─ Vacancies + Applicant Count
-  ├─ Interview Schedule by Date
-  └─ Selected / Rejected per Vacancy
-
-EMAIL NOTIFICATIONS (triggered automatically — shown as dashed lines in diagram):
-  • Email: Registration        ← on successful registration (employer or candidate)
-  • Email: New Application     ← on candidate applying to a vacancy (sent to employer)
-  • Email: Interview Scheduled ← on employer scheduling an interview (sent to candidate)
-  • Email: Status Change       ← on outcome update Selected/Rejected (sent to candidate)"""
-    add_code_block(doc, FLOW)
-
     # ── 3. Planned Pages Inventory ─────────────────────────────────
     heading(doc, "3. Planned Pages Inventory")
     p = doc.add_paragraph()
