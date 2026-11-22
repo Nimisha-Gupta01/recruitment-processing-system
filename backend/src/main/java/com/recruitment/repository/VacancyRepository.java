@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface VacancyRepository extends JpaRepository<Vacancy, Integer> {
     List<Vacancy> findByEmployer_EmployerIdOrderByPostedAtDesc(Integer employerId);
+    List<Vacancy> findByStatusOrderByPostedAtDesc(Vacancy.VacancyStatus status);
 }
