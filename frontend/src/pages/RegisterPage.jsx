@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { FaUser, FaEnvelope, FaPhone, FaLock, FaBriefcase } from 'react-icons/fa'
 import api from '../api/axios.js'
 
 const employerInitial = { orgName: '', contactName: '', email: '', phone: '', password: '' }
@@ -43,9 +44,14 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="d-flex justify-content-center align-items-center min-vh-100 py-4">
-      <div className="card p-4" style={{ width: '500px' }}>
-        <h4 className="card-title mb-4 text-center">Register</h4>
+    <div className="d-flex flex-column justify-content-center align-items-center min-vh-100 py-4">
+      <div className="mb-4 text-center">
+        <FaBriefcase size={32} color="#2563eb" className="mb-2" />
+        <div className="recpro-brand" style={{ fontSize: '2rem' }}>RecPro</div>
+        <div className="text-muted" style={{ fontSize: '0.9rem' }}>Your career, simplified.</div>
+      </div>
+      <div className="card recpro-card p-4" style={{ width: '500px' }}>
+        <h5 className="card-title mb-4 text-center fw-semibold">Create an Account</h5>
         {success && <div className="alert alert-success">Registered successfully!</div>}
         {error && <div className="alert alert-danger">{error}</div>}
         <div className="mb-3">
@@ -60,42 +66,69 @@ export default function RegisterPage() {
             <>
               <div className="mb-3">
                 <label className="form-label">Organisation Name</label>
-                <input name="orgName" className="form-control" value={form.orgName} onChange={handleChange} required />
+                <div className="input-group">
+                  <span className="input-group-text"><FaBriefcase color="#6c757d" /></span>
+                  <input name="orgName" className="form-control" value={form.orgName} onChange={handleChange} required />
+                </div>
               </div>
               <div className="mb-3">
                 <label className="form-label">Contact Name</label>
-                <input name="contactName" className="form-control" value={form.contactName} onChange={handleChange} required />
+                <div className="input-group">
+                  <span className="input-group-text"><FaUser color="#6c757d" /></span>
+                  <input name="contactName" className="form-control" value={form.contactName} onChange={handleChange} required />
+                </div>
               </div>
               <div className="mb-3">
                 <label className="form-label">Email</label>
-                <input type="email" name="email" className="form-control" value={form.email} onChange={handleChange} required />
+                <div className="input-group">
+                  <span className="input-group-text"><FaEnvelope color="#6c757d" /></span>
+                  <input type="email" name="email" className="form-control" value={form.email} onChange={handleChange} required />
+                </div>
               </div>
               <div className="mb-3">
                 <label className="form-label">Phone</label>
-                <input name="phone" className="form-control" value={form.phone} onChange={handleChange} required />
+                <div className="input-group">
+                  <span className="input-group-text"><FaPhone color="#6c757d" /></span>
+                  <input name="phone" className="form-control" value={form.phone} onChange={handleChange} required />
+                </div>
               </div>
               <div className="mb-3">
                 <label className="form-label">Password</label>
-                <input type="password" name="password" className="form-control" value={form.password} onChange={handleChange} required />
+                <div className="input-group">
+                  <span className="input-group-text"><FaLock color="#6c757d" /></span>
+                  <input type="password" name="password" className="form-control" value={form.password} onChange={handleChange} required />
+                </div>
               </div>
             </>
           ) : (
             <>
               <div className="mb-3">
                 <label className="form-label">Full Name</label>
-                <input name="fullName" className="form-control" value={form.fullName} onChange={handleChange} required />
+                <div className="input-group">
+                  <span className="input-group-text"><FaUser color="#6c757d" /></span>
+                  <input name="fullName" className="form-control" value={form.fullName} onChange={handleChange} required />
+                </div>
               </div>
               <div className="mb-3">
                 <label className="form-label">Email</label>
-                <input type="email" name="email" className="form-control" value={form.email} onChange={handleChange} required />
+                <div className="input-group">
+                  <span className="input-group-text"><FaEnvelope color="#6c757d" /></span>
+                  <input type="email" name="email" className="form-control" value={form.email} onChange={handleChange} required />
+                </div>
               </div>
               <div className="mb-3">
                 <label className="form-label">Phone</label>
-                <input name="phone" className="form-control" value={form.phone} onChange={handleChange} required />
+                <div className="input-group">
+                  <span className="input-group-text"><FaPhone color="#6c757d" /></span>
+                  <input name="phone" className="form-control" value={form.phone} onChange={handleChange} required />
+                </div>
               </div>
               <div className="mb-3">
                 <label className="form-label">Password</label>
-                <input type="password" name="password" className="form-control" value={form.password} onChange={handleChange} required />
+                <div className="input-group">
+                  <span className="input-group-text"><FaLock color="#6c757d" /></span>
+                  <input type="password" name="password" className="form-control" value={form.password} onChange={handleChange} required />
+                </div>
               </div>
               <div className="mb-3">
                 <label className="form-label">Degree</label>

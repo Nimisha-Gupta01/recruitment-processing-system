@@ -80,6 +80,17 @@ public class ApplicationService {
         r.setAppliedAt(app.getAppliedAt() != null ? app.getAppliedAt().toString() : null);
         r.setStatus(app.getStatus());
         r.setCoverNote(app.getCoverNote());
+        r.setResumePath(app.getResumePath());
         return r;
+    }
+
+    public ApplicationResponse updateResumePath(String candidateEmail, Integer applicationId, String resumePath) {
+        Application app = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new IllegalArgumentException("Application not found"));
+        if (!app.getCandidate().getEmail().equals(candidateEmail)) {
+            throw new SecurityException("Access denied");
+        }
+        app.setResumePath(resumePath);
+        return toResponse(applicationRepository.save(app));
     }
 }

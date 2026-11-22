@@ -12,7 +12,7 @@ export default function CandidateDashboard() {
   return (
     <>
       <nav className="navbar navbar-expand-lg navbar-dark bg-dark px-4">
-        <span className="navbar-brand">RPS</span>
+        <span className="navbar-brand"><span className="recpro-brand" style={{ color: '#fff' }}>RecPro</span></span>
         <div className="navbar-nav ms-auto d-flex flex-row gap-3">
           <button className="btn btn-link text-white text-decoration-none" onClick={() => navigate('/candidate/profile')}>Profile</button>
           <button className="btn btn-link text-white text-decoration-none" onClick={() => navigate('/candidate/jobs')}>Job Search</button>

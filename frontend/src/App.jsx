@@ -7,6 +7,7 @@ import CandidateProfile from './pages/candidate/CandidateProfile.jsx'
 import JobSearchPage from './pages/candidate/JobSearchPage.jsx'
 import MyApplicationsPage from './pages/candidate/MyApplicationsPage.jsx'
 import EmployerDashboard from './pages/employer/EmployerDashboard.jsx'
+import EmployerLoginPage from './pages/employer/EmployerLoginPage.jsx'
 import VacancyManagementPage from './pages/employer/VacancyManagementPage.jsx'
 import ApplicationsPage from './pages/employer/ApplicationsPage.jsx'
 import InterviewsPage from './pages/employer/InterviewsPage.jsx'
@@ -26,6 +27,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/employer/login" element={<EmployerLoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/candidate/dashboard" element={
           <ProtectedRoute role="CANDIDATE"><CandidateDashboard /></ProtectedRoute>

@@ -22,6 +22,7 @@ public class ApplicationDTOs {
         private String appliedAt;
         private String status;
         private String coverNote;
+        private String resumePath;
 
         public Integer getApplicationId() { return applicationId; }
         public void setApplicationId(Integer applicationId) { this.applicationId = applicationId; }
@@ -41,6 +42,8 @@ public class ApplicationDTOs {
         public void setStatus(String status) { this.status = status; }
         public String getCoverNote() { return coverNote; }
         public void setCoverNote(String coverNote) { this.coverNote = coverNote; }
+        public String getResumePath() { return resumePath; }
+        public void setResumePath(String resumePath) { this.resumePath = resumePath; }
     }
 
     public static class ApplicationStatusUpdateRequest {

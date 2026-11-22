@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { FaMapMarkerAlt, FaMoneyBillWave, FaCalendarAlt } from 'react-icons/fa'
 import api from '../../api/axios.js'
 
 function CandidateNavbar() {
@@ -7,7 +8,7 @@ function CandidateNavbar() {
   function logout() { localStorage.clear(); navigate('/') }
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-dark px-4">
-      <span className="navbar-brand">RPS</span>
+      <span className="navbar-brand"><span className="recpro-brand" style={{ color: '#fff' }}>RecPro</span></span>
       <div className="navbar-nav ms-auto d-flex flex-row gap-3">
         <button className="btn btn-link text-white text-decoration-none" onClick={() => navigate('/candidate/profile')}>Profile</button>
         <button className="btn btn-link text-white text-decoration-none" onClick={() => navigate('/candidate/jobs')}>Job Search</button>
@@ -101,13 +102,13 @@ export default function JobSearchPage() {
         <div className="row g-4">
           {filtered.map(v => (
             <div className="col-md-4" key={v.vacancyId}>
-              <div className="card h-100">
+              <div className="card recpro-card h-100">
                 <div className="card-body">
                   <h5 className="card-title">{v.designation}</h5>
                   <p className="card-text text-muted mb-1">{v.employerOrgName}</p>
-                  <p className="card-text mb-1"><small>📍 {v.location}</small></p>
-                  <p className="card-text mb-1"><small>💰 {formatSalary(v.salaryMin)} – {formatSalary(v.salaryMax)}</small></p>
-                  <p className="card-text"><small>Deadline: {v.applicationDeadline}</small></p>
+                  <p className="card-text mb-1"><small><FaMapMarkerAlt color="#6c757d" className="me-1" />{v.location}</small></p>
+                  <p className="card-text mb-1"><small><FaMoneyBillWave color="#6c757d" className="me-1" />{formatSalary(v.salaryMin)} – {formatSalary(v.salaryMax)}</small></p>
+                  <p className="card-text"><small><FaCalendarAlt color="#6c757d" className="me-1" />Deadline: {v.applicationDeadline}</small></p>
                 </div>
                 <div className="card-footer">
                   <button

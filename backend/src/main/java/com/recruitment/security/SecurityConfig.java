@@ -14,6 +14,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import org.springframework.http.HttpMethod;
+
 import java.util.List;
 
 @Configuration
@@ -38,6 +40,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/vacancies/open").permitAll()
+                .requestMatchers("/api/stats/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/applications/*/resume").hasRole("CANDIDATE")
+                .requestMatchers(HttpMethod.GET, "/api/resumes/**").hasRole("EMPLOYER")
                 .requestMatchers("/api/employer/**").hasRole("EMPLOYER")
                 .requestMatchers("/api/applications/**").hasRole("CANDIDATE")
                 .requestMatchers("/api/candidate/**").hasRole("CANDIDATE")

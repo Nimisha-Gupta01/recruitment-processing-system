@@ -27,6 +27,9 @@ public class Application {
     @Column(columnDefinition = "TEXT")
     private String coverNote;
 
+    @Column(length = 500)
+    private String resumePath;
+
     public Integer getApplicationId() { return applicationId; }
     public void setApplicationId(Integer applicationId) { this.applicationId = applicationId; }
 
@@ -44,4 +47,7 @@ public class Application {
 
     public String getCoverNote() { return coverNote; }
     public void setCoverNote(String coverNote) { this.coverNote = coverNote; }
+
+    public String getResumePath() { return resumePath; }
+    public void setResumePath(String resumePath) { this.resumePath = resumePath; }
 }
