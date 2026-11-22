@@ -19,7 +19,7 @@ public class Interview {
 
     private LocalDateTime interviewDatetime;
 
-    @Column(length = 20)
+    @Column(columnDefinition = "ENUM('In-Person','Online','Telephonic')")
     private String mode;
 
     @Column(length = 200)
@@ -28,7 +28,7 @@ public class Interview {
     @Column(length = 100)
     private String interviewerName;
 
-    @Column(length = 20)
+    @Column(columnDefinition = "ENUM('Scheduled','Completed','Cancelled','Selected','Rejected')")
     private String outcome = "Scheduled";
 
     @Column(columnDefinition = "TEXT")

@@ -21,7 +21,7 @@ public class Application {
 
     private LocalDateTime appliedAt = LocalDateTime.now();
 
-    @Column(length = 50)
+    @Column(columnDefinition = "ENUM('Applied','Shortlisted','Interview Scheduled','Interview Completed','Selected','Offered','Recruited','Rejected','Withdrawn')")
     private String status = "Applied";
 
     @Column(columnDefinition = "TEXT")

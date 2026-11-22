@@ -64,7 +64,8 @@ export default function JobSearchPage() {
       setAppliedIds(s => new Set([...s, modal.vacancyId]))
       setModalMsg({ text: 'Applied successfully!', type: 'success' })
     } catch (err) {
-      const msg = err.response?.data?.message || err.response?.data || ''
+      const rawMsg = err.response?.data
+      const msg = typeof rawMsg === 'string' ? rawMsg : (rawMsg?.message || rawMsg?.error || '')
       if (typeof msg === 'string' && msg.toLowerCase().includes('already applied')) {
         setModalMsg({ text: 'You have already applied for this position.', type: 'warning' })
       } else {
