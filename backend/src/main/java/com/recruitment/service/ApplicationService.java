@@ -37,9 +37,13 @@ public class ApplicationService {
                 .orElseThrow(() -> new IllegalArgumentException("Candidate not found"));
         Vacancy vacancy = vacancyRepository.findById(req.getVacancyId())
                 .orElseThrow(() -> new IllegalArgumentException("Vacancy not found"));
-        if (applicationRepository.existsByVacancy_VacancyIdAndCandidate_CandidateId(vacancy.getVacancyId(), candidate.getCandidateId())) {
+        if (applicationRepository.existsByVacancy_VacancyIdAndCandidate_CandidateIdAndStatusNot(vacancy.getVacancyId(), candidate.getCandidateId(), "Withdrawn")) {
             throw new IllegalArgumentException("Already applied");
         }
+        // Remove any previous withdrawn application so the new one can be created cleanly
+        applicationRepository.findByVacancy_VacancyIdAndCandidate_CandidateId(vacancy.getVacancyId(), candidate.getCandidateId())
+                .ifPresent(applicationRepository::delete);
+        applicationRepository.flush();
         Application app = new Application();
         app.setVacancy(vacancy);
         app.setCandidate(candidate);
