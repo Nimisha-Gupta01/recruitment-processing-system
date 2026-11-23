@@ -6,9 +6,9 @@ import com.recruitment.entity.Application;
 import com.recruitment.entity.Vacancy;
 import com.recruitment.repository.ApplicationRepository;
 import com.recruitment.repository.VacancyRepository;
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
-import org.apache.pdfbox.Loader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,8 +29,14 @@ public class AiAnalysisService {
 
     private static final Logger log = LoggerFactory.getLogger(AiAnalysisService.class);
 
-    @Value("${claude.api.key:}")
-    private String claudeApiKey;
+    @Value("${hyperspace.api.key:}")
+    private String apiKey;
+
+    @Value("${hyperspace.base.url:http://localhost:6655/openai/v1}")
+    private String baseUrl;
+
+    @Value("${hyperspace.model:gpt-4.1-mini}")
+    private String model;
 
     @Value("${app.upload.dir:./uploads}")
     private String uploadDir;
@@ -53,7 +59,7 @@ public class AiAnalysisService {
     @Transactional
     public List<com.recruitment.dto.ApplicationDTOs.ApplicationResponse> analyseVacancy(
             String employerEmail, Integer vacancyId,
-            com.recruitment.service.ApplicationService applicationService) {
+            ApplicationService applicationService) {
 
         Vacancy vacancy = vacancyRepository.findById(vacancyId)
                 .orElseThrow(() -> new IllegalArgumentException("Vacancy not found"));
@@ -73,7 +79,7 @@ public class AiAnalysisService {
             }
             try {
                 String resumeText = extractPdfText(app.getResumePath());
-                AnalysisResult result = callClaude(jobDesc, resumeText);
+                AnalysisResult result = callAi(jobDesc, resumeText);
                 app.setAiScore(result.score);
                 app.setAiSummary(result.summary);
                 applicationRepository.save(app);
@@ -101,23 +107,14 @@ public class AiAnalysisService {
 
     private String extractPdfText(String resumePath) throws IOException {
         File file = new File(uploadDir, resumePath);
-        if (!file.exists()) {
-            // Try without subdirectory prefix (path may already be just filename)
-            file = new File(uploadDir + "/" + resumePath);
-        }
         try (PDDocument doc = Loader.loadPDF(file)) {
             PDFTextStripper stripper = new PDFTextStripper();
             String text = stripper.getText(doc);
-            // Truncate to 4000 chars to stay within token limits
             return text.length() > 4000 ? text.substring(0, 4000) + "..." : text;
         }
     }
 
-    private AnalysisResult callClaude(String jobContext, String resumeText) throws Exception {
-        if (claudeApiKey == null || claudeApiKey.isBlank()) {
-            throw new IllegalStateException("Claude API key not configured. Set claude.api.key in application.properties.");
-        }
-
+    private AnalysisResult callAi(String jobContext, String resumeText) throws Exception {
         String prompt = """
                 You are a recruitment assistant. Analyse how well this candidate's resume matches the job requirements.
 
@@ -134,30 +131,30 @@ public class AiAnalysisService {
                 """.formatted(jobContext, resumeText);
 
         String requestBody = objectMapper.writeValueAsString(new java.util.LinkedHashMap<>() {{
-            put("model", "claude-haiku-5-5");
+            put("model", model);
             put("max_tokens", 300);
             put("messages", List.of(java.util.Map.of("role", "user", "content", prompt)));
         }});
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://api.anthropic.com/v1/messages"))
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/chat/completions"))
                 .header("Content-Type", "application/json")
-                .header("x-api-key", claudeApiKey)
-                .header("anthropic-version", "2023-06-01")
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                .build();
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody));
+
+        if (apiKey != null && !apiKey.isBlank()) {
+            builder.header("Authorization", "Bearer " + apiKey);
+        }
 
         HttpResponse<String> response = HttpClient.newHttpClient()
-                .send(request, HttpResponse.BodyHandlers.ofString());
+                .send(builder.build(), HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() != 200) {
-            throw new RuntimeException("Claude API error " + response.statusCode() + ": " + response.body());
+            throw new RuntimeException("AI API error " + response.statusCode() + ": " + response.body());
         }
 
         JsonNode root = objectMapper.readTree(response.body());
-        String content = root.path("content").get(0).path("text").asText();
+        String content = root.path("choices").get(0).path("message").path("content").asText();
 
-        // Strip markdown code fences if present
         content = content.trim();
         if (content.startsWith("```")) {
             content = content.replaceAll("```[a-z]*\\n?", "").replace("```", "").trim();

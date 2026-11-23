@@ -39,7 +39,7 @@ function ApplicationsPage() {
   });
   const [analysing, setAnalysing] = useState(false);
   const [analysed, setAnalysed] = useState(false);
-  const [tooltipAppId, setTooltipAppId] = useState(null);
+  const [aiModalApp, setAiModalApp] = useState(null);
 
   useEffect(() => {
     api.get('/employer/vacancies')
@@ -197,38 +197,18 @@ function ApplicationsPage() {
                     </td>
                     <td>{new Date(app.appliedAt).toLocaleDateString()}</td>
                     {hasAnyScore && (
-                      <td style={{ minWidth: 120 }}>
-                        <div className="d-flex align-items-center gap-2 position-relative">
+                      <td style={{ minWidth: 140 }}>
+                        <div className="d-flex align-items-center gap-2">
                           <ScoreBadge score={app.aiScore} />
-                          {app.aiSummary && (
-                            <span
-                              style={{ cursor: 'pointer', fontSize: 14 }}
-                              onMouseEnter={() => setTooltipAppId(app.applicationId)}
-                              onMouseLeave={() => setTooltipAppId(null)}
+                          {app.aiSummary && app.aiScore != null && (
+                            <button
+                              className="btn btn-sm p-0 border-0 bg-transparent"
+                              style={{ fontSize: 16, lineHeight: 1 }}
+                              onClick={() => setAiModalApp(app)}
+                              title="View AI analysis"
                             >
                               ℹ️
-                              {tooltipAppId === app.applicationId && (
-                                <div
-                                  style={{
-                                    position: 'absolute',
-                                    left: 0,
-                                    top: '100%',
-                                    zIndex: 100,
-                                    background: '#1e293b',
-                                    color: '#f1f5f9',
-                                    borderRadius: 8,
-                                    padding: '10px 14px',
-                                    fontSize: 13,
-                                    maxWidth: 320,
-                                    boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
-                                    lineHeight: 1.5,
-                                    whiteSpace: 'normal',
-                                  }}
-                                >
-                                  {app.aiSummary}
-                                </div>
-                              )}
-                            </span>
+                            </button>
                           )}
                           {app.aiScore == null && app.aiSummary && (
                             <span className="text-muted" style={{ fontSize: 12 }}>{app.aiSummary}</span>
@@ -305,6 +285,30 @@ function ApplicationsPage() {
                   <button type="submit" className="btn btn-primary">Schedule</button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+      {aiModalApp && (
+        <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setAiModalApp(null)}>
+          <div className="modal-dialog modal-dialog-centered" onClick={e => e.stopPropagation()}>
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">✨ AI Analysis — {aiModalApp.candidateName}</h5>
+                <button className="btn-close" onClick={() => setAiModalApp(null)} />
+              </div>
+              <div className="modal-body">
+                <div className="d-flex align-items-center gap-3 mb-3">
+                  <ScoreBadge score={aiModalApp.aiScore} />
+                  <span className="text-muted" style={{ fontSize: 13 }}>
+                    {aiModalApp.aiScore >= 80 ? 'Excellent match' : aiModalApp.aiScore >= 60 ? 'Good match' : aiModalApp.aiScore >= 40 ? 'Partial match' : 'Poor match'}
+                  </span>
+                </div>
+                <p style={{ fontSize: 14, lineHeight: 1.7, margin: 0 }}>{aiModalApp.aiSummary}</p>
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setAiModalApp(null)}>Close</button>
+              </div>
             </div>
           </div>
         </div>
