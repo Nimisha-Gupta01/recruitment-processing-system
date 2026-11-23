@@ -137,6 +137,7 @@ CREATE TABLE applications (
                         'Withdrawn'
                     ) DEFAULT 'Applied',
     cover_note      TEXT,
+    resume_path     VARCHAR(500),
     UNIQUE KEY uq_application (vacancy_id, candidate_id),
     FOREIGN KEY (vacancy_id)    REFERENCES vacancies(vacancy_id)   ON DELETE CASCADE,
     FOREIGN KEY (candidate_id)  REFERENCES candidates(candidate_id) ON DELETE CASCADE
@@ -214,12 +215,12 @@ CREATE INDEX idx_interviews_datetime     ON interviews(interview_datetime);
 -- Employer (password: Test@1234)
 INSERT INTO employers (org_name, established_yr, num_employees, annual_turnover, contact_name, email, phone, password_hash)
 VALUES ('TechCorp Solutions', 2010, 500, 50000000.00, 'Rajesh Kumar', 'hr@techcorp.com', '9876543210',
-        '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
+        '$2b$10$YFQZgWq6OuHQBvlY25izheD5z6wVe4UOk0ZnvzOHwvUdisI5OO8GK');
 
 -- Candidate (password: Test@1234)
 INSERT INTO candidates (full_name, email, phone, password_hash, dob, gender, degree, institution, year_of_passing, percentage, total_exp_yrs, expected_sal_min, expected_sal_max)
 VALUES ('Priya Sharma', 'priya@example.com', '9123456780',
-        '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+        '$2b$10$YFQZgWq6OuHQBvlY25izheD5z6wVe4UOk0ZnvzOHwvUdisI5OO8GK',
         '1998-05-12', 'Female', 'B.Tech CSE', 'NIT Warangal', 2020, 82.50, 3.0, 600000, 1000000);
 
 -- Vacancy

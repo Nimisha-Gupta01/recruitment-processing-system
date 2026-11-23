@@ -7,16 +7,16 @@ USE recruitment_db;
 -- Employer 2
 INSERT IGNORE INTO employers (org_name, contact_name, email, phone, password_hash)
 VALUES ('Infosys Ltd', 'Meera Nair', 'hr@infosys.com', '9876500001',
-        '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
+        '$2b$10$YFQZgWq6OuHQBvlY25izheD5z6wVe4UOk0ZnvzOHwvUdisI5OO8GK');
 
 -- Candidates (candidate_id=1 already exists from db-schema.sql)
 INSERT IGNORE INTO candidates (full_name, email, phone, password_hash, dob, gender, degree, institution, year_of_passing, percentage, total_exp_yrs, expected_sal_min, expected_sal_max)
 VALUES
   ('Rahul Mehta',  'rahul@example.com', '9123456781',
-   '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+   '$2b$10$YFQZgWq6OuHQBvlY25izheD5z6wVe4UOk0ZnvzOHwvUdisI5OO8GK',
    '1997-08-20', 'Male', 'MCA', 'BITS Pilani', 2021, 78.00, 2.0, 500000, 900000),
   ('Anita Rao',    'anita@example.com',  '9123456782',
-   '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+   '$2b$10$YFQZgWq6OuHQBvlY25izheD5z6wVe4UOk0ZnvzOHwvUdisI5OO8GK',
    '1999-03-15', 'Female', 'B.Sc CS', 'Osmania University', 2022, 85.20, 1.5, 400000, 700000);
 
 -- Skills for Priya (candidate_id=1)
