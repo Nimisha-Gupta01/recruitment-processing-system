@@ -19,6 +19,7 @@ backend/.mvn/
 
 # Spring Boot secrets — never commit real passwords
 # application-prod.properties
+backend/src/main/resources/application-local.properties
 
 # Node (for frontend later)
 frontend/node_modules/

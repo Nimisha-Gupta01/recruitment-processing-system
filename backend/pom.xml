@@ -87,6 +87,13 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- PDF text extraction for AI resume analysis -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>3.0.3</version>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

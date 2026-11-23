@@ -30,6 +30,11 @@ public class Application {
     @Column(length = 500)
     private String resumePath;
 
+    private Integer aiScore;
+
+    @Column(columnDefinition = "TEXT")
+    private String aiSummary;
+
     public Integer getApplicationId() { return applicationId; }
     public void setApplicationId(Integer applicationId) { this.applicationId = applicationId; }
 
@@ -50,4 +55,10 @@ public class Application {
 
     public String getResumePath() { return resumePath; }
     public void setResumePath(String resumePath) { this.resumePath = resumePath; }
+
+    public Integer getAiScore() { return aiScore; }
+    public void setAiScore(Integer aiScore) { this.aiScore = aiScore; }
+
+    public String getAiSummary() { return aiSummary; }
+    public void setAiSummary(String aiSummary) { this.aiSummary = aiSummary; }
 }

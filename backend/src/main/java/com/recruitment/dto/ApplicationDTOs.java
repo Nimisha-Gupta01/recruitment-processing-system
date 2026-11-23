@@ -23,6 +23,8 @@ public class ApplicationDTOs {
         private String status;
         private String coverNote;
         private String resumePath;
+        private Integer aiScore;
+        private String aiSummary;
 
         public Integer getApplicationId() { return applicationId; }
         public void setApplicationId(Integer applicationId) { this.applicationId = applicationId; }
@@ -44,6 +46,10 @@ public class ApplicationDTOs {
         public void setCoverNote(String coverNote) { this.coverNote = coverNote; }
         public String getResumePath() { return resumePath; }
         public void setResumePath(String resumePath) { this.resumePath = resumePath; }
+        public Integer getAiScore() { return aiScore; }
+        public void setAiScore(Integer aiScore) { this.aiScore = aiScore; }
+        public String getAiSummary() { return aiSummary; }
+        public void setAiSummary(String aiSummary) { this.aiSummary = aiSummary; }
     }
 
     public static class ApplicationStatusUpdateRequest {

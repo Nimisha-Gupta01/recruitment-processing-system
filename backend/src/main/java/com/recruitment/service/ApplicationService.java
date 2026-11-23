@@ -169,6 +169,8 @@ public class ApplicationService {
         r.setStatus(app.getStatus());
         r.setCoverNote(app.getCoverNote());
         r.setResumePath(app.getResumePath());
+        r.setAiScore(app.getAiScore());
+        r.setAiSummary(app.getAiSummary());
         return r;
     }
 

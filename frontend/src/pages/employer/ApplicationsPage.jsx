@@ -4,6 +4,29 @@ import api from '../../api/axios';
 const APPLICATION_STATUSES = ['Applied', 'Shortlisted', 'Interview Scheduled', 'Interview Completed', 'Selected', 'Rejected', 'Withdrawn'];
 const INTERVIEW_MODES = ['Online', 'In-Person', 'Telephonic'];
 
+function ScoreBadge({ score }) {
+  if (score == null) return null;
+  const color = score >= 80 ? '#198754' : score >= 60 ? '#fd7e14' : '#dc3545';
+  const bg = score >= 80 ? '#d1fae5' : score >= 60 ? '#fff3cd' : '#fee2e2';
+  return (
+    <span
+      style={{
+        display: 'inline-block',
+        padding: '2px 8px',
+        borderRadius: 12,
+        fontSize: 12,
+        fontWeight: 700,
+        color,
+        background: bg,
+        border: `1px solid ${color}`,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {score}/100
+    </span>
+  );
+}
+
 function ApplicationsPage() {
   const [vacancies, setVacancies] = useState([]);
   const [selectedVacancyId, setSelectedVacancyId] = useState('');
@@ -14,6 +37,9 @@ function ApplicationsPage() {
   const [interviewForm, setInterviewForm] = useState({
     roundNumber: 1, interviewDatetime: '', mode: 'Online', venue: '', interviewerName: '',
   });
+  const [analysing, setAnalysing] = useState(false);
+  const [analysed, setAnalysed] = useState(false);
+  const [tooltipAppId, setTooltipAppId] = useState(null);
 
   useEffect(() => {
     api.get('/employer/vacancies')
@@ -34,18 +60,40 @@ function ApplicationsPage() {
   function handleVacancyChange(e) {
     const id = e.target.value;
     setSelectedVacancyId(id);
+    setAnalysed(false);
     if (id) loadApplications(id);
     else setApplications([]);
   }
 
   async function handleStatusChange(appId, status) {
-    // Optimistically update UI so dropdown reflects immediately
-    setApplications(prev => prev.map(a => a.applicationId === appId ? { ...a, status } : a))
+    setApplications(prev => prev.map(a => a.applicationId === appId ? { ...a, status } : a));
     try {
       await api.patch(`/employer/applications/${appId}/status`, { status });
     } catch {
       setError('Failed to update status.');
-      loadApplications(selectedVacancyId); // revert by reloading
+      loadApplications(selectedVacancyId);
+    }
+  }
+
+  async function handleRunAiAnalysis() {
+    setAnalysing(true);
+    setError('');
+    try {
+      const res = await api.post(`/employer/vacancies/${selectedVacancyId}/ai-analyse`);
+      // Sort by score descending (nulls last)
+      const sorted = [...res.data].sort((a, b) => {
+        if (a.aiScore == null && b.aiScore == null) return 0;
+        if (a.aiScore == null) return 1;
+        if (b.aiScore == null) return -1;
+        return b.aiScore - a.aiScore;
+      });
+      setApplications(sorted);
+      setAnalysed(true);
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'AI analysis failed.';
+      setError('AI analysis failed: ' + msg);
+    } finally {
+      setAnalysing(false);
     }
   }
 
@@ -69,7 +117,6 @@ function ApplicationsPage() {
         interviewerName: interviewForm.interviewerName,
       });
       setShowInterviewModal(false);
-      // Reload so the row immediately shows "Interview Scheduled" and greys out if needed
       loadApplications(selectedVacancyId);
     } catch {
       setError('Failed to schedule interview.');
@@ -80,10 +127,15 @@ function ApplicationsPage() {
     setInterviewForm({ ...interviewForm, [e.target.name]: e.target.value });
   }
 
+  const hasAnyScore = applications.some(a => a.aiScore != null);
+
   return (
     <div className="container mt-4">
       <h3>Applications</h3>
-      {error && <div className="alert alert-danger">{error}</div>}
+      {error && <div className="alert alert-danger alert-dismissible">
+        {error}
+        <button type="button" className="btn-close" onClick={() => setError('')} />
+      </div>}
       <div className="mb-3 col-md-4">
         <label className="form-label">Select Vacancy</label>
         <select className="form-select" value={selectedVacancyId} onChange={handleVacancyChange}>
@@ -94,57 +146,129 @@ function ApplicationsPage() {
         </select>
       </div>
 
+      {selectedVacancyId && applications.length > 0 && (
+        <div className="mb-3 d-flex align-items-center gap-3">
+          <button
+            className="btn btn-outline-primary d-flex align-items-center gap-2"
+            onClick={handleRunAiAnalysis}
+            disabled={analysing}
+          >
+            {analysing ? (
+              <><span className="spinner-border spinner-border-sm" /> Analysing resumes…</>
+            ) : (
+              <>✨ {analysed ? 'Re-run AI Analysis' : 'Run AI Analysis'}</>
+            )}
+          </button>
+          {analysed && (
+            <span className="text-muted" style={{ fontSize: 13 }}>
+              Candidates ranked by AI match score
+            </span>
+          )}
+        </div>
+      )}
+
       {selectedVacancyId && (
-        <table className="table table-bordered table-hover">
-          <thead className="table-dark">
-            <tr><th>Candidate Name</th><th>Applied Date</th><th>Status</th><th>Actions</th></tr>
-          </thead>
-          <tbody>
-            {applications.map(app => {
-              const isTerminal = ['Withdrawn', 'Rejected', 'Selected'].includes(app.status)
-              return (
-              <tr key={app.applicationId} style={isTerminal ? { opacity: 0.5, background: '#f3f4f6', color: '#9ca3af', pointerEvents: 'none' } : {}}>
-                <td>
-                  {app.candidateName}
-                  {isTerminal && (
-                    <span className={`ms-2 badge ${app.status === 'Selected' ? 'bg-success' : 'bg-secondary'}`} style={{ fontSize: 11 }}>
-                      {app.status}
-                    </span>
-                  )}
-                </td>
-                <td>{new Date(app.appliedAt).toLocaleDateString()}</td>
-                <td>
-                  <select
-                    className="form-select form-select-sm"
-                    value={app.status}
-                    onChange={e => handleStatusChange(app.applicationId, e.target.value)}
-                    disabled={isTerminal}
-                  >
-                    {APPLICATION_STATUSES.map(s => <option key={s}>{s}</option>)}
-                  </select>
-                </td>
-                <td>
-                  <button
-                    className="btn btn-sm btn-primary me-2"
-                    onClick={() => openInterviewModal(app.applicationId)}
-                    disabled={isTerminal}
-                  >
-                    Schedule Interview
-                  </button>
-                  {!isTerminal && (
-                    <button
-                      className="btn btn-sm btn-outline-danger"
-                      onClick={() => handleStatusChange(app.applicationId, 'Rejected')}
-                    >
-                      Reject
-                    </button>
-                  )}
-                </td>
+        <div style={{ overflowX: 'auto' }}>
+          <table className="table table-bordered table-hover">
+            <thead className="table-dark">
+              <tr>
+                <th>Candidate Name</th>
+                <th>Applied Date</th>
+                {hasAnyScore && <th>AI Score</th>}
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
-              )
-            })}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {applications.map(app => {
+                const isTerminal = ['Withdrawn', 'Rejected', 'Selected'].includes(app.status);
+                return (
+                  <tr
+                    key={app.applicationId}
+                    style={isTerminal ? { opacity: 0.5, background: '#f3f4f6', color: '#9ca3af', pointerEvents: 'none' } : {}}
+                  >
+                    <td>
+                      {app.candidateName}
+                      {isTerminal && (
+                        <span className={`ms-2 badge ${app.status === 'Selected' ? 'bg-success' : 'bg-secondary'}`} style={{ fontSize: 11 }}>
+                          {app.status}
+                        </span>
+                      )}
+                    </td>
+                    <td>{new Date(app.appliedAt).toLocaleDateString()}</td>
+                    {hasAnyScore && (
+                      <td style={{ minWidth: 120 }}>
+                        <div className="d-flex align-items-center gap-2 position-relative">
+                          <ScoreBadge score={app.aiScore} />
+                          {app.aiSummary && (
+                            <span
+                              style={{ cursor: 'pointer', fontSize: 14 }}
+                              onMouseEnter={() => setTooltipAppId(app.applicationId)}
+                              onMouseLeave={() => setTooltipAppId(null)}
+                            >
+                              ℹ️
+                              {tooltipAppId === app.applicationId && (
+                                <div
+                                  style={{
+                                    position: 'absolute',
+                                    left: 0,
+                                    top: '100%',
+                                    zIndex: 100,
+                                    background: '#1e293b',
+                                    color: '#f1f5f9',
+                                    borderRadius: 8,
+                                    padding: '10px 14px',
+                                    fontSize: 13,
+                                    maxWidth: 320,
+                                    boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+                                    lineHeight: 1.5,
+                                    whiteSpace: 'normal',
+                                  }}
+                                >
+                                  {app.aiSummary}
+                                </div>
+                              )}
+                            </span>
+                          )}
+                          {app.aiScore == null && app.aiSummary && (
+                            <span className="text-muted" style={{ fontSize: 12 }}>{app.aiSummary}</span>
+                          )}
+                        </div>
+                      </td>
+                    )}
+                    <td>
+                      <select
+                        className="form-select form-select-sm"
+                        value={app.status}
+                        onChange={e => handleStatusChange(app.applicationId, e.target.value)}
+                        disabled={isTerminal}
+                      >
+                        {APPLICATION_STATUSES.map(s => <option key={s}>{s}</option>)}
+                      </select>
+                    </td>
+                    <td>
+                      <button
+                        className="btn btn-sm btn-primary me-2"
+                        onClick={() => openInterviewModal(app.applicationId)}
+                        disabled={isTerminal}
+                      >
+                        Schedule Interview
+                      </button>
+                      {!isTerminal && (
+                        <button
+                          className="btn btn-sm btn-outline-danger"
+                          onClick={() => handleStatusChange(app.applicationId, 'Rejected')}
+                        >
+                          Reject
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {showInterviewModal && (
