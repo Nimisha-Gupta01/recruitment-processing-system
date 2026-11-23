@@ -359,7 +359,7 @@ docker compose down -v       # also remove volumes (full reset)
 
 | Role | Email | Password |
 |------|-------|----------|
-| Employer | techcorp@example.com | Test@1234 |
+| Employer | hr@techcorp.com | Test@1234 |
 | Candidate | priya@example.com | Test@1234 |
 | Candidate (secondary) | rahul@example.com | Test@1234 |
 

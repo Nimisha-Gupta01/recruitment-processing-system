@@ -2,6 +2,8 @@ package com.recruitment.controller;
 
 import com.recruitment.dto.EmployerSearchDTOs.CandidateSearchResponse;
 import com.recruitment.service.EmployerSearchService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -11,6 +13,7 @@ import java.util.List;
 @RequestMapping("/api/employer/candidates")
 public class EmployerSearchController {
 
+    private static final Logger log = LoggerFactory.getLogger(EmployerSearchController.class);
     private final EmployerSearchService service;
 
     public EmployerSearchController(EmployerSearchService service) {
@@ -24,6 +27,10 @@ public class EmployerSearchController {
             @RequestParam(required = false) BigDecimal salaryMax,
             @RequestParam(required = false) String qualification,
             @RequestParam(required = false) BigDecimal minPercentage) {
-        return service.searchCandidates(role, location, salaryMax, qualification, minPercentage);
+        log.info("Searching candidates — role={}, location={}, salaryMax={}, qualification={}, minPercentage={}",
+                role, location, salaryMax, qualification, minPercentage);
+        List<CandidateSearchResponse> results = service.searchCandidates(role, location, salaryMax, qualification, minPercentage);
+        log.info("Candidate search returned {} results", results.size());
+        return results;
     }
 }

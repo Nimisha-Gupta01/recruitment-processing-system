@@ -55,7 +55,6 @@ export default function RegisterPage() {
         {success && <div className="alert alert-success">Registered successfully!</div>}
         {error && <div className="alert alert-danger">{error}</div>}
         <div className="mb-3">
-          <label className="form-label">I am a</label>
           <select className="form-select" value={role} onChange={handleRoleChange}>
             <option value="CANDIDATE">Candidate</option>
             <option value="EMPLOYER">Employer</option>
