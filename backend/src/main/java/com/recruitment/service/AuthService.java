@@ -92,4 +92,12 @@ public class AuthService {
             return new AuthResponse(token, "CANDIDATE", candidate.getCandidateId(), candidate.getFullName());
         }
     }
+
+    public AuthResponse getMe(String email) {
+        return candidateRepo.findByEmail(email)
+            .map(c -> new AuthResponse(null, "CANDIDATE", c.getCandidateId(), c.getFullName()))
+            .orElseGet(() -> employerRepo.findByEmail(email)
+                .map(e -> new AuthResponse(null, "EMPLOYER", e.getEmployerId(), e.getContactName()))
+                .orElseThrow(() -> new IllegalArgumentException("User not found")));
+    }
 }

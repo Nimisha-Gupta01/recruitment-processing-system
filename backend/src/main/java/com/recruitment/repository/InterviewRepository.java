@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface InterviewRepository extends JpaRepository<Interview, Integer> {
     List<Interview> findByApplication_ApplicationId(Integer applicationId);
+    List<Interview> findByApplication_Candidate_Email(String email);
 }

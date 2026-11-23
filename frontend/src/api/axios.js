@@ -1,19 +1,19 @@
 import axios from 'axios'
 
-const api = axios.create({ baseURL: '/api' })
-
-api.interceptors.request.use(config => {
-  const token = localStorage.getItem('token')
-  if (token) config.headers.Authorization = `Bearer ${token}`
-  return config
+const api = axios.create({
+  baseURL: '/api',
+  withCredentials: true, // send httpOnly cookie with every request
 })
 
 api.interceptors.response.use(
   res => res,
   err => {
     if (err.response?.status === 401) {
-      localStorage.clear()
-      window.location.href = '/login'
+      const role = localStorage.getItem('role')
+      if (role) {
+        localStorage.clear()
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(err)
   }

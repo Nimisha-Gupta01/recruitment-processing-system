@@ -6,17 +6,18 @@ import CandidateDashboard from './pages/candidate/CandidateDashboard.jsx'
 import CandidateProfile from './pages/candidate/CandidateProfile.jsx'
 import JobSearchPage from './pages/candidate/JobSearchPage.jsx'
 import MyApplicationsPage from './pages/candidate/MyApplicationsPage.jsx'
+import CandidateNotificationsPage from './pages/candidate/CandidateNotificationsPage.jsx'
 import EmployerDashboard from './pages/employer/EmployerDashboard.jsx'
 import EmployerLoginPage from './pages/employer/EmployerLoginPage.jsx'
 import VacancyManagementPage from './pages/employer/VacancyManagementPage.jsx'
 import ApplicationsPage from './pages/employer/ApplicationsPage.jsx'
 import InterviewsPage from './pages/employer/InterviewsPage.jsx'
 import CandidateSearchPage from './pages/employer/CandidateSearchPage.jsx'
+import EmployerNotificationsPage from './pages/employer/EmployerNotificationsPage.jsx'
 
 function ProtectedRoute({ children, role }) {
-  const token = localStorage.getItem('token')
   const storedRole = localStorage.getItem('role')
-  if (!token) return <Navigate to="/login" replace />
+  if (!storedRole) return <Navigate to="/login" replace />
   if (role && storedRole !== role) return <Navigate to="/login" replace />
   return children
 }
@@ -55,6 +56,12 @@ export default function App() {
         } />
         <Route path="/employer/search" element={
           <ProtectedRoute role="EMPLOYER"><CandidateSearchPage /></ProtectedRoute>
+        } />
+        <Route path="/employer/notifications" element={
+          <ProtectedRoute role="EMPLOYER"><EmployerNotificationsPage /></ProtectedRoute>
+        } />
+        <Route path="/candidate/notifications" element={
+          <ProtectedRoute role="CANDIDATE"><CandidateNotificationsPage /></ProtectedRoute>
         } />
       </Routes>
     </BrowserRouter>

@@ -151,5 +151,10 @@ public class AuthDTOs {
         public String getRole() { return role; }
         public Integer getUserId() { return userId; }
         public String getName() { return name; }
+
+        // Returns a copy without the token (safe to send to frontend)
+        public AuthResponse withoutToken() {
+            return new AuthResponse(null, this.role, this.userId, this.name);
+        }
     }
 }

@@ -52,4 +52,11 @@ public class ApplicationDTOs {
         public String getStatus() { return status; }
         public void setStatus(String status) { this.status = status; }
     }
+
+    public static class WithdrawRequest {
+        private String reason;
+
+        public String getReason() { return reason; }
+        public void setReason(String reason) { this.reason = reason; }
+    }
 }

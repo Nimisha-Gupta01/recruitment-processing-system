@@ -3,13 +3,25 @@ import api from '../../api/axios';
 
 const OUTCOME_OPTIONS = ['Scheduled', 'Completed', 'Cancelled', 'Selected', 'Rejected'];
 
+const STATUS_BADGE = {
+  Withdrawn: 'secondary',
+  Rejected: 'danger',
+  Recruited: 'success',
+  'Interview Scheduled': 'info',
+  'Interview Completed': 'warning',
+  Selected: 'success',
+  Shortlisted: 'primary',
+  Applied: 'secondary',
+};
+
 function InterviewsPage() {
   const [vacancies, setVacancies] = useState([]);
   const [selectedVacancyId, setSelectedVacancyId] = useState('');
-  const [applications, setApplications] = useState([]);
+  const [interviews, setInterviews] = useState([]);
   const [error, setError] = useState('');
   const [showOutcomeModal, setShowOutcomeModal] = useState(false);
-  const [outcomeForm, setOutcomeForm] = useState({ interviewId: '', outcome: 'Completed', remarks: '' });
+  const [selectedInterview, setSelectedInterview] = useState(null);
+  const [outcomeForm, setOutcomeForm] = useState({ outcome: 'Completed', remarks: '' });
 
   useEffect(() => {
     api.get('/employer/vacancies')
@@ -17,50 +29,61 @@ function InterviewsPage() {
       .catch(() => setError('Failed to load vacancies.'));
   }, []);
 
-  async function loadApplications(vacancyId) {
+  async function loadInterviews(vacancyId) {
     try {
-      const res = await api.get(`/employer/applications?vacancyId=${vacancyId}`);
-      setApplications(res.data);
+      // Fetch applications for this vacancy, then fetch interviews per application
+      const appsRes = await api.get(`/employer/applications?vacancyId=${vacancyId}`);
+      const apps = appsRes.data;
+
+      // Fetch interviews for each application in parallel
+      const interviewLists = await Promise.all(
+        apps.map(app =>
+          api.get(`/employer/interviews?applicationId=${app.applicationId}`)
+            .then(r => r.data.map(i => ({ ...i, candidateName: app.candidateName, appStatus: app.status })))
+            .catch(() => [])
+        )
+      );
+      setInterviews(interviewLists.flat());
     } catch {
-      // TODO: remove mock
-      setApplications([{ applicationId: 1, candidateName: 'Priya Sharma', status: 'Interview Scheduled' }]);
+      setError('Failed to load interviews.');
+      setInterviews([]);
     }
   }
 
   function handleVacancyChange(e) {
     const id = e.target.value;
     setSelectedVacancyId(id);
-    if (id) loadApplications(id);
-    else setApplications([]);
+    setInterviews([]);
+    if (id) loadInterviews(id);
   }
 
-  function openOutcomeModal(app) {
-    setOutcomeForm({ interviewId: '', outcome: 'Completed', remarks: '' });
+  function openOutcomeModal(interview) {
+    setSelectedInterview(interview);
+    setOutcomeForm({ outcome: interview.outcome || 'Completed', remarks: interview.remarks || '' });
     setShowOutcomeModal(true);
   }
 
   async function handleOutcomeSubmit(e) {
     e.preventDefault();
-    if (!outcomeForm.interviewId) {
-      alert('Please enter the Interview ID.');
-      return;
-    }
     try {
-      await api.patch(`/employer/interviews/${outcomeForm.interviewId}/outcome`, {
+      await api.patch(`/employer/interviews/${selectedInterview.interviewId}/outcome`, {
         outcome: outcomeForm.outcome,
         remarks: outcomeForm.remarks,
       });
       setShowOutcomeModal(false);
+      loadInterviews(selectedVacancyId);
     } catch {
-      // TODO: remove mock
-      setShowOutcomeModal(false);
+      setError('Failed to update outcome.');
     }
   }
 
   return (
     <div className="container mt-4">
       <h3>Interviews</h3>
-      {error && <div className="alert alert-danger">{error}</div>}
+      {error && <div className="alert alert-danger alert-dismissible">
+        {error}
+        <button type="button" className="btn-close" onClick={() => setError('')} />
+      </div>}
       <div className="mb-3 col-md-4">
         <label className="form-label">Select Vacancy</label>
         <select className="form-select" value={selectedVacancyId} onChange={handleVacancyChange}>
@@ -72,47 +95,81 @@ function InterviewsPage() {
       </div>
 
       {selectedVacancyId && (
-        <table className="table table-bordered table-hover">
-          <thead className="table-dark">
-            <tr><th>Candidate Name</th><th>Application Status</th><th>Update Outcome</th></tr>
-          </thead>
-          <tbody>
-            {applications.map(app => (
-              <tr key={app.applicationId}>
-                <td>{app.candidateName}</td>
-                <td>{app.status}</td>
-                <td>
-                  <button className="btn btn-sm btn-warning" onClick={() => openOutcomeModal(app)}>
-                    Update Outcome
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        interviews.length === 0
+          ? <p className="text-muted">No interviews scheduled for this vacancy yet.</p>
+          : (
+            <table className="table table-bordered table-hover">
+              <thead className="table-dark">
+                <tr>
+                  <th>Candidate</th>
+                  <th>Date &amp; Time</th>
+                  <th>Mode</th>
+                  <th>Interviewer</th>
+                  <th>App Status</th>
+                  <th>Outcome</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {interviews.map(iv => {
+                  const isTerminal = ['Withdrawn', 'Rejected', 'Recruited'].includes(iv.appStatus);
+                  return (
+                    <tr key={iv.interviewId} style={isTerminal ? { opacity: 0.45, background: '#f3f4f6', color: '#9ca3af' } : {}}>
+                      <td>
+                        {iv.candidateName}
+                        {isTerminal && (
+                          <span className={`ms-2 badge bg-${STATUS_BADGE[iv.appStatus] || 'secondary'}`} style={{ fontSize: 10 }}>
+                            {iv.appStatus}
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        {iv.interviewDatetime
+                          ? new Date(iv.interviewDatetime).toLocaleString('en-IN', {
+                              day: '2-digit', month: 'short', year: 'numeric',
+                              hour: '2-digit', minute: '2-digit',
+                            })
+                          : '—'}
+                      </td>
+                      <td>{iv.mode || '—'}</td>
+                      <td>{iv.interviewerName || '—'}</td>
+                      <td>
+                        <span className={`badge bg-${STATUS_BADGE[iv.appStatus] || 'secondary'}`}>
+                          {iv.appStatus}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`badge bg-${STATUS_BADGE[iv.outcome] || 'secondary'}`}>
+                          {iv.outcome}
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          className="btn btn-sm btn-warning"
+                          onClick={() => openOutcomeModal(iv)}
+                          disabled={isTerminal}
+                        >
+                          Update Outcome
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )
       )}
 
-      {showOutcomeModal && (
+      {showOutcomeModal && selectedInterview && (
         <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)' }}>
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Update Interview Outcome</h5>
-                <button className="btn-close" onClick={() => setShowOutcomeModal(false)}></button>
+                <h5 className="modal-title">Update Outcome — {selectedInterview.candidateName}</h5>
+                <button className="btn-close" onClick={() => setShowOutcomeModal(false)} />
               </div>
               <form onSubmit={handleOutcomeSubmit}>
                 <div className="modal-body row g-3">
-                  <div className="col-12">
-                    <label className="form-label">Interview ID</label>
-                    <input
-                      className="form-control"
-                      type="number"
-                      value={outcomeForm.interviewId}
-                      onChange={e => setOutcomeForm({ ...outcomeForm, interviewId: e.target.value })}
-                      placeholder="Enter interview ID from schedule step"
-                      required
-                    />
-                  </div>
                   <div className="col-12">
                     <label className="form-label">Outcome</label>
                     <select
@@ -130,6 +187,7 @@ function InterviewsPage() {
                       rows={3}
                       value={outcomeForm.remarks}
                       onChange={e => setOutcomeForm({ ...outcomeForm, remarks: e.target.value })}
+                      placeholder="Optional notes about this interview..."
                     />
                   </div>
                 </div>

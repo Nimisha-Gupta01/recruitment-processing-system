@@ -4,11 +4,6 @@ import api from '../../api/axios';
 const APPLICATION_STATUSES = ['Applied', 'Shortlisted', 'Interview Scheduled', 'Interview Completed', 'Selected', 'Offered', 'Recruited', 'Rejected', 'Withdrawn'];
 const INTERVIEW_MODES = ['Online', 'In-Person', 'Telephonic'];
 
-// TODO: remove mock
-const mockApplications = [
-  { applicationId: 1, candidateName: 'Priya Sharma', appliedAt: '2026-11-16T10:00:00', status: 'Applied', coverNote: "I'm interested" },
-];
-
 function ApplicationsPage() {
   const [vacancies, setVacancies] = useState([]);
   const [selectedVacancyId, setSelectedVacancyId] = useState('');
@@ -31,8 +26,8 @@ function ApplicationsPage() {
       const res = await api.get(`/employer/applications?vacancyId=${vacancyId}`);
       setApplications(res.data);
     } catch {
-      // TODO: remove mock
-      setApplications(mockApplications);
+      setError('Failed to load applications.');
+      setApplications([]);
     }
   }
 
@@ -44,17 +39,19 @@ function ApplicationsPage() {
   }
 
   async function handleStatusChange(appId, status) {
+    // Optimistically update UI so dropdown reflects immediately
+    setApplications(prev => prev.map(a => a.applicationId === appId ? { ...a, status } : a))
     try {
       await api.patch(`/employer/applications/${appId}/status`, { status });
-      loadApplications(selectedVacancyId);
     } catch {
       setError('Failed to update status.');
+      loadApplications(selectedVacancyId); // revert by reloading
     }
   }
 
   function openInterviewModal(appId) {
     setSelectedAppId(appId);
-    setInterviewForm({ roundNumber: 1, interviewDatetime: '', mode: 'Online', venue: '', interviewerName: '' });
+    setInterviewForm({ interviewDatetime: '', mode: 'Online', venue: '', interviewerName: '' });
     setShowInterviewModal(true);
   }
 
@@ -66,16 +63,16 @@ function ApplicationsPage() {
     try {
       await api.post('/employer/interviews', {
         applicationId: selectedAppId,
-        roundNumber: parseInt(interviewForm.roundNumber),
         interviewDatetime: datetime,
         mode: interviewForm.mode,
         venue: interviewForm.venue,
         interviewerName: interviewForm.interviewerName,
       });
       setShowInterviewModal(false);
+      // Reload so the row immediately shows "Interview Scheduled" and greys out if needed
+      loadApplications(selectedVacancyId);
     } catch {
-      // TODO: remove mock
-      setShowInterviewModal(false);
+      setError('Failed to schedule interview.');
     }
   }
 
@@ -103,26 +100,49 @@ function ApplicationsPage() {
             <tr><th>Candidate Name</th><th>Applied Date</th><th>Status</th><th>Actions</th></tr>
           </thead>
           <tbody>
-            {applications.map(app => (
-              <tr key={app.applicationId}>
-                <td>{app.candidateName}</td>
+            {applications.map(app => {
+              const isTerminal = ['Withdrawn', 'Rejected', 'Recruited'].includes(app.status)
+              return (
+              <tr key={app.applicationId} style={isTerminal ? { opacity: 0.5, background: '#f3f4f6', color: '#9ca3af', pointerEvents: 'none' } : {}}>
+                <td>
+                  {app.candidateName}
+                  {isTerminal && (
+                    <span className={`ms-2 badge ${app.status === 'Recruited' ? 'bg-success' : 'bg-secondary'}`} style={{ fontSize: 11 }}>
+                      {app.status}
+                    </span>
+                  )}
+                </td>
                 <td>{new Date(app.appliedAt).toLocaleDateString()}</td>
                 <td>
                   <select
                     className="form-select form-select-sm"
                     value={app.status}
                     onChange={e => handleStatusChange(app.applicationId, e.target.value)}
+                    disabled={isTerminal}
                   >
                     {APPLICATION_STATUSES.map(s => <option key={s}>{s}</option>)}
                   </select>
                 </td>
                 <td>
-                  <button className="btn btn-sm btn-primary" onClick={() => openInterviewModal(app.applicationId)}>
+                  <button
+                    className="btn btn-sm btn-primary me-2"
+                    onClick={() => openInterviewModal(app.applicationId)}
+                    disabled={isTerminal}
+                  >
                     Schedule Interview
                   </button>
+                  {!isTerminal && (
+                    <button
+                      className="btn btn-sm btn-outline-danger"
+                      onClick={() => handleStatusChange(app.applicationId, 'Rejected')}
+                    >
+                      Reject
+                    </button>
+                  )}
                 </td>
               </tr>
-            ))}
+              )
+            })}
           </tbody>
         </table>
       )}
@@ -138,11 +158,7 @@ function ApplicationsPage() {
               <form onSubmit={handleInterviewSubmit}>
                 <div className="modal-body row g-3">
                   <div className="col-12">
-                    <label className="form-label">Round Number</label>
-                    <input className="form-control" type="number" name="roundNumber" value={interviewForm.roundNumber} onChange={handleInterviewChange} required />
-                  </div>
-                  <div className="col-12">
-                    <label className="form-label">Interview Date & Time</label>
+                    <label className="form-label">Interview Date &amp; Time</label>
                     <input className="form-control" type="datetime-local" name="interviewDatetime" value={interviewForm.interviewDatetime} onChange={handleInterviewChange} required />
                   </div>
                   <div className="col-12">

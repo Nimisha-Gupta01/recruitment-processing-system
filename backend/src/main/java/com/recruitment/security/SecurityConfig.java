@@ -42,10 +42,12 @@ public class SecurityConfig {
                 .requestMatchers("/api/vacancies/open").permitAll()
                 .requestMatchers("/api/stats/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/applications/*/resume").hasRole("CANDIDATE")
+                .requestMatchers(HttpMethod.PATCH, "/api/applications/*/withdraw").hasRole("CANDIDATE")
                 .requestMatchers(HttpMethod.GET, "/api/resumes/**").hasRole("EMPLOYER")
                 .requestMatchers("/api/employer/**").hasRole("EMPLOYER")
                 .requestMatchers("/api/applications/**").hasRole("CANDIDATE")
                 .requestMatchers("/api/candidate/**").hasRole("CANDIDATE")
+                .requestMatchers("/api/notifications").authenticated()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

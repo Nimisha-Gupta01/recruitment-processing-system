@@ -2,7 +2,43 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import api from '../../api/axios.js'
 
-// ─── Navbar ──────────────────────────────────────────────────────────────────
+// ─── Confirm Modal ────────────────────────────────────────────────────────────
+
+function ConfirmModal({ show, title, message, onConfirm, onCancel, loading, reason, onReasonChange }) {
+  if (!show) return null
+  return (
+    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content">
+          <div className="modal-header border-0 pb-0">
+            <h5 className="modal-title fw-semibold">{title}</h5>
+            <button className="btn-close" onClick={onCancel} disabled={loading} />
+          </div>
+          <div className="modal-body pt-2">
+            <p className="text-muted mb-3">{message}</p>
+            <label className="form-label fw-semibold small">Reason for withdrawal <span className="text-danger">*</span></label>
+            <textarea
+              className="form-control"
+              rows={3}
+              placeholder="Please tell the employer why you are withdrawing (e.g. accepted another offer, personal reasons…)"
+              value={reason}
+              onChange={e => onReasonChange(e.target.value)}
+              disabled={loading}
+              maxLength={300}
+            />
+            <div className="text-muted text-end small mt-1">{reason.length}/300</div>
+          </div>
+          <div className="modal-footer border-0 pt-0">
+            <button className="btn btn-outline-secondary" onClick={onCancel} disabled={loading}>Cancel</button>
+            <button className="btn btn-danger" onClick={onConfirm} disabled={loading || !reason.trim()}>
+              {loading ? <><span className="spinner-border spinner-border-sm me-2" />Withdrawing…</> : 'Yes, Withdraw'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function CandidateNavbar() {
   const navigate = useNavigate()
@@ -139,14 +175,42 @@ function StatusJourney({ status }) {
 
 // ─── Application Card ─────────────────────────────────────────────────────────
 
-function ApplicationCard({ application, onResumeUploaded }) {
+function ApplicationCard({ application, interview, onResumeUploaded, onWithdraw }) {
   const [expanded, setExpanded] = useState(false)
   const [file, setFile] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState(null)
+  const [withdrawing, setWithdrawing] = useState(false)
+  const [confirmWithdraw, setConfirmWithdraw] = useState(false)
+  const [withdrawReason, setWithdrawReason] = useState('')
   const fileInputRef = useRef(null)
 
   const { applicationId, vacancyTitle, employerOrgName, appliedAt, status, coverNote, resumePath } = application
+
+  const canWithdraw = !['Withdrawn', 'Rejected', 'Recruited'].includes(status)
+
+  async function handleWithdraw() {
+    setWithdrawing(true)
+    try {
+      await api.patch(`/applications/${applicationId}/withdraw`, { reason: withdrawReason })
+    } catch {
+      alert('Failed to withdraw. Please try again.')
+      setWithdrawing(false)
+      setConfirmWithdraw(false)
+      setWithdrawReason('')
+      return
+    }
+    setWithdrawing(false)
+    setConfirmWithdraw(false)
+    setWithdrawReason('')
+    onWithdraw()
+  }
+
+  function openWithdrawModal(e) {
+    e.stopPropagation()
+    setWithdrawReason('')
+    setConfirmWithdraw(true)
+  }
 
   function formatDate(iso) {
     return new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
@@ -207,31 +271,70 @@ function ApplicationCard({ application, onResumeUploaded }) {
   }
   const badgeColor = badgeVariants[status] || 'secondary'
 
+  const isTerminal = ['Withdrawn', 'Rejected', 'Recruited'].includes(status)
+
   return (
-    <div className="card mb-4 shadow-sm border-0">
+    <div
+      className="card mb-4 shadow-sm border-0"
+      style={isTerminal ? { opacity: 0.65, filter: 'grayscale(30%)' } : {}}
+    >
+      {/* Withdrawn / Rejected banner */}
+      {isTerminal && (
+        <div
+          className="d-flex align-items-center gap-2 px-4 py-2"
+          style={{
+            background: status === 'Recruited' ? '#d1fae5' : '#fee2e2',
+            borderBottom: `2px solid ${status === 'Recruited' ? '#6ee7b7' : '#fca5a5'}`,
+            fontSize: 13,
+          }}
+        >
+          <span style={{ fontSize: 16 }}>{status === 'Recruited' ? '✅' : '🚫'}</span>
+          <span className="fw-semibold">
+            {status === 'Withdrawn'
+              ? 'You have withdrawn this application. No further actions are available.'
+              : status === 'Rejected'
+              ? 'This application was not selected. No further actions are available.'
+              : 'Congratulations! You have been recruited for this position.'}
+          </span>
+        </div>
+      )}
+
       {/* Card Header Row */}
       <div
         className="card-header bg-white d-flex flex-wrap align-items-start justify-content-between py-3 px-4"
-        style={{ borderBottom: '1px solid #e9ecef', cursor: 'pointer' }}
-        onClick={() => setExpanded(v => !v)}
+        style={{ borderBottom: '1px solid #e9ecef', cursor: isTerminal ? 'default' : 'pointer' }}
+        onClick={() => !isTerminal && setExpanded(v => !v)}
         role="button"
         aria-expanded={expanded}
       >
         <div>
-          <h5 className="mb-0 fw-bold">{vacancyTitle}</h5>
+          <h5 className="mb-0 fw-bold" style={isTerminal ? { color: '#9ca3af' } : {}}>{vacancyTitle}</h5>
           <span className="text-muted" style={{ fontSize: 14 }}>{employerOrgName}</span>
         </div>
         <div className="text-end d-flex flex-column align-items-end gap-1">
           <span className="text-muted" style={{ fontSize: 13 }}>
             Applied {formatDate(appliedAt)}
           </span>
-          <button
-            className="btn btn-sm btn-outline-secondary"
-            style={{ fontSize: 12, padding: '2px 10px' }}
-            onClick={e => { e.stopPropagation(); setExpanded(v => !v) }}
-          >
-            {expanded ? 'Hide Details' : 'View Details'}
-          </button>
+          <div className="d-flex gap-2">
+            {!isTerminal && (
+              <button
+                className="btn btn-sm btn-outline-secondary"
+                style={{ fontSize: 12, padding: '2px 10px' }}
+                onClick={e => { e.stopPropagation(); setExpanded(v => !v) }}
+              >
+                {expanded ? 'Hide Details' : 'View Details'}
+              </button>
+            )}
+            {canWithdraw && (
+              <button
+                className="btn btn-sm btn-outline-danger"
+                style={{ fontSize: 12, padding: '2px 10px' }}
+                onClick={openWithdrawModal}
+              >
+                Withdraw
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -240,13 +343,48 @@ function ApplicationCard({ application, onResumeUploaded }) {
         <StatusJourney status={status} />
       </div>
 
-      {/* Expandable Detail Section */}
-      {expanded && (
+      {/* Expandable Detail Section — hidden for terminal states */}
+      {expanded && !isTerminal && (
         <div className="card-body px-4 pt-2 pb-4" style={{ borderTop: '1px solid #f0f0f0' }}>
           {/* Status badge */}
           <div className="mb-3">
             <span className={`badge bg-${badgeColor} fs-6`}>{status}</span>
           </div>
+
+          {/* Interview details — only for active scheduled/completed */}
+          {interview && ['Interview Scheduled', 'Interview Completed'].includes(status) && !isTerminal && (
+            <div className="mb-3 p-3 rounded" style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+              <div className="fw-semibold mb-2" style={{ color: '#1d4ed8' }}>
+                📅 Interview Details — Round {interview.roundNumber}
+              </div>
+              <div className="row g-2" style={{ fontSize: 14 }}>
+                <div className="col-sm-6">
+                  <span className="text-muted">Date &amp; Time:</span>{' '}
+                  <strong>{new Date(interview.interviewDatetime).toLocaleString('en-IN', {
+                    day: '2-digit', month: 'short', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                  })}</strong>
+                </div>
+                <div className="col-sm-6">
+                  <span className="text-muted">Mode:</span> <strong>{interview.mode}</strong>
+                </div>
+                {interview.venue && (
+                  <div className="col-sm-6">
+                    <span className="text-muted">Venue:</span> <strong>{interview.venue}</strong>
+                  </div>
+                )}
+                <div className="col-sm-6">
+                  <span className="text-muted">Interviewer:</span> <strong>{interview.interviewerName}</strong>
+                </div>
+                {status === 'Interview Completed' && (
+                  <div className="col-12 mt-1">
+                    <span className="badge bg-secondary">Completed</span>
+                    {interview.remarks && <span className="ms-2 text-muted">{interview.remarks}</span>}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Vacancy info */}
           <div className="mb-3">
@@ -309,6 +447,17 @@ function ApplicationCard({ application, onResumeUploaded }) {
           </div>
         </div>
       )}
+      {/* Withdraw confirm modal */}
+      <ConfirmModal
+        show={confirmWithdraw}
+        title="Withdraw Application"
+        message={`Are you sure you want to withdraw your application for ${vacancyTitle} at ${employerOrgName}? This cannot be undone.`}
+        onConfirm={handleWithdraw}
+        onCancel={() => { setConfirmWithdraw(false); setWithdrawReason('') }}
+        loading={withdrawing}
+        reason={withdrawReason}
+        onReasonChange={setWithdrawReason}
+      />
     </div>
   )
 }
@@ -317,20 +466,27 @@ function ApplicationCard({ application, onResumeUploaded }) {
 
 export default function MyApplicationsPage() {
   const [applications, setApplications] = useState([])
+  const [interviews, setInterviews] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  function loadApplications() {
+  function loadAll() {
     setLoading(true)
     setError(null)
-    api.get('/applications/my')
-      .then(r => setApplications(r.data))
+    Promise.all([
+      api.get('/applications/my'),
+      api.get('/candidate/interviews').catch(() => ({ data: [] })),
+    ])
+      .then(([appsRes, intRes]) => {
+        setApplications(appsRes.data)
+        setInterviews(intRes.data)
+      })
       .catch(() => setError('Failed to load applications. Please refresh.'))
       .finally(() => setLoading(false))
   }
 
   useEffect(() => {
-    loadApplications()
+    loadAll()
   }, [])
 
   return (
@@ -362,7 +518,9 @@ export default function MyApplicationsPage() {
           <ApplicationCard
             key={app.applicationId}
             application={app}
-            onResumeUploaded={loadApplications}
+            interview={interviews.find(i => i.applicationId === app.applicationId) || null}
+            onResumeUploaded={loadAll}
+            onWithdraw={loadAll}
           />
         ))}
       </div>

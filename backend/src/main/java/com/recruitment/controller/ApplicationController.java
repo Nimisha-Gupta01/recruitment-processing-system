@@ -44,6 +44,14 @@ public class ApplicationController {
         return applicationService.getVacancyApplications(employerEmail, vacancyId);
     }
 
+    @PatchMapping("/applications/{id}/withdraw")
+    public ApplicationResponse withdraw(@AuthenticationPrincipal String candidateEmail,
+                                        @PathVariable Integer id,
+                                        @RequestBody WithdrawRequest req) {
+        log.info("Candidate {} withdrawing application id={} reason='{}'", candidateEmail, id, req.getReason());
+        return applicationService.withdrawApplication(candidateEmail, id, req.getReason());
+    }
+
     @PatchMapping("/employer/applications/{id}/status")
     public ApplicationResponse updateStatus(@AuthenticationPrincipal String employerEmail,
                                              @PathVariable Integer id,

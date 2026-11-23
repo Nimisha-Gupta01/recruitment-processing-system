@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FaUser, FaEnvelope, FaPhone, FaLock, FaBriefcase } from 'react-icons/fa'
+import { FaUser, FaEnvelope, FaPhone, FaLock, FaBriefcase, FaEye, FaEyeSlash } from 'react-icons/fa'
 import api from '../api/axios.js'
 
 const employerInitial = { orgName: '', contactName: '', email: '', phone: '', password: '' }
@@ -15,6 +15,7 @@ export default function RegisterPage() {
   const [form, setForm] = useState(candidateInitial)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
 
   function handleRoleChange(e) {
     const r = e.target.value
@@ -95,7 +96,10 @@ export default function RegisterPage() {
                 <label className="form-label">Password</label>
                 <div className="input-group">
                   <span className="input-group-text"><FaLock color="#6c757d" /></span>
-                  <input type="password" name="password" className="form-control" value={form.password} onChange={handleChange} required />
+                  <input type={showPassword ? 'text' : 'password'} name="password" className="form-control" value={form.password} onChange={handleChange} required />
+                  <button type="button" className="input-group-text bg-white border-start-0" onClick={() => setShowPassword(s => !s)} tabIndex={-1}>
+                    {showPassword ? <FaEyeSlash color="#6c757d" /> : <FaEye color="#6c757d" />}
+                  </button>
                 </div>
               </div>
             </>
@@ -126,7 +130,10 @@ export default function RegisterPage() {
                 <label className="form-label">Password</label>
                 <div className="input-group">
                   <span className="input-group-text"><FaLock color="#6c757d" /></span>
-                  <input type="password" name="password" className="form-control" value={form.password} onChange={handleChange} required />
+                  <input type={showPassword ? 'text' : 'password'} name="password" className="form-control" value={form.password} onChange={handleChange} required />
+                  <button type="button" className="input-group-text bg-white border-start-0" onClick={() => setShowPassword(s => !s)} tabIndex={-1}>
+                    {showPassword ? <FaEyeSlash color="#6c757d" /> : <FaEye color="#6c757d" />}
+                  </button>
                 </div>
               </div>
               <div className="mb-3">

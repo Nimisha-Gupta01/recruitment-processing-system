@@ -8,6 +8,7 @@ import com.recruitment.repository.ApplicationRepository;
 import com.recruitment.repository.CandidateRepository;
 import com.recruitment.repository.VacancyRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,15 +19,19 @@ public class ApplicationService {
     private final ApplicationRepository applicationRepository;
     private final CandidateRepository candidateRepository;
     private final VacancyRepository vacancyRepository;
+    private final NotificationService notificationService;
 
     public ApplicationService(ApplicationRepository applicationRepository,
                                CandidateRepository candidateRepository,
-                               VacancyRepository vacancyRepository) {
+                               VacancyRepository vacancyRepository,
+                               NotificationService notificationService) {
         this.applicationRepository = applicationRepository;
         this.candidateRepository = candidateRepository;
         this.vacancyRepository = vacancyRepository;
+        this.notificationService = notificationService;
     }
 
+    @Transactional
     public ApplicationResponse apply(String candidateEmail, ApplicationCreateRequest req) {
         Candidate candidate = candidateRepository.findByEmail(candidateEmail)
                 .orElseThrow(() -> new IllegalArgumentException("Candidate not found"));
@@ -39,7 +44,31 @@ public class ApplicationService {
         app.setVacancy(vacancy);
         app.setCandidate(candidate);
         app.setCoverNote(req.getCoverNote());
-        return toResponse(applicationRepository.save(app));
+        ApplicationResponse res = toResponse(applicationRepository.save(app));
+
+        String vacancyTitle = vacancy.getDesignation();
+        String candidateName = candidate.getFullName();
+        String employerEmail = vacancy.getEmployer().getEmail();
+
+        // Notify candidate — confirmation of application
+        notificationService.notify(
+            candidateEmail,
+            "Candidate",
+            "Application Submitted — " + vacancyTitle,
+            "Your application for " + vacancyTitle + " at " + vacancy.getEmployer().getOrgName() + " has been submitted successfully.",
+            "APPLICATION_SUBMITTED"
+        );
+
+        // Notify employer — new application received
+        notificationService.notify(
+            employerEmail,
+            "Employer",
+            "New Application — " + vacancyTitle,
+            candidateName + " has applied for the position of " + vacancyTitle + ".",
+            "APPLICATION_SUBMITTED"
+        );
+
+        return res;
     }
 
     public List<ApplicationResponse> getCandidateApplications(String candidateEmail) {
@@ -59,6 +88,7 @@ public class ApplicationService {
                 .stream().map(this::toResponse).collect(Collectors.toList());
     }
 
+    @Transactional
     public ApplicationResponse updateStatus(String employerEmail, Integer applicationId, ApplicationStatusUpdateRequest req) {
         Application app = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new IllegalArgumentException("Application not found"));
@@ -66,7 +96,65 @@ public class ApplicationService {
             throw new SecurityException("Access denied");
         }
         app.setStatus(req.getStatus());
-        return toResponse(applicationRepository.save(app));
+        ApplicationResponse res = toResponse(applicationRepository.save(app));
+
+        // Notify candidate of any status change
+        String candidateEmail = app.getCandidate().getEmail();
+        String candidateName = app.getCandidate().getFullName();
+        String vacancyTitle = app.getVacancy().getDesignation();
+        String newStatus = req.getStatus();
+
+        String subject = "Application Update — " + vacancyTitle;
+        String body = "Dear " + candidateName + ", your application for " + vacancyTitle +
+                " has been updated to: " + newStatus + ".";
+
+        if ("Rejected".equals(newStatus)) {
+            subject = "Application Not Selected — " + vacancyTitle;
+            body = "Dear " + candidateName + ", we regret to inform you that your application for " +
+                   vacancyTitle + " has not been selected at this time.";
+        } else if ("Shortlisted".equals(newStatus)) {
+            subject = "Congratulations! You've been Shortlisted — " + vacancyTitle;
+            body = "Dear " + candidateName + ", congratulations! You have been shortlisted for " + vacancyTitle + ".";
+        } else if ("Selected".equals(newStatus)) {
+            subject = "Selected! — " + vacancyTitle;
+            body = "Dear " + candidateName + ", congratulations! You have been selected for " + vacancyTitle + ".";
+        }
+
+        notificationService.notify(candidateEmail, "Candidate", subject, body, "STATUS_CHANGED");
+
+        return res;
+    }
+
+    @Transactional
+    public ApplicationResponse withdrawApplication(String candidateEmail, Integer applicationId, String reason) {
+        Application app = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new IllegalArgumentException("Application not found"));
+        if (!app.getCandidate().getEmail().equals(candidateEmail)) {
+            throw new SecurityException("Access denied");
+        }
+        if (app.getStatus().equals("Withdrawn")) {
+            throw new IllegalArgumentException("Application already withdrawn");
+        }
+        app.setStatus("Withdrawn");
+        ApplicationResponse res = toResponse(applicationRepository.save(app));
+
+        // Notify employer — include reason if provided
+        String employerEmail = app.getVacancy().getEmployer().getEmail();
+        String candidateName = app.getCandidate().getFullName();
+        String vacancyTitle = app.getVacancy().getDesignation();
+        String body = candidateName + " has withdrawn their application for the position of " + vacancyTitle + ".";
+        if (reason != null && !reason.isBlank()) {
+            body += " Reason: " + reason;
+        }
+        notificationService.notify(
+            employerEmail,
+            "Employer",
+            "Application Withdrawn — " + vacancyTitle,
+            body,
+            "APPLICATION_WITHDRAWN"
+        );
+
+        return res;
     }
 
     public ApplicationResponse toResponse(Application app) {

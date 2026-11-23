@@ -8,8 +8,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("/api/employer/interviews")
+@RequestMapping("/api")
 public class InterviewController {
 
     private static final Logger log = LoggerFactory.getLogger(InterviewController.class);
@@ -19,7 +21,7 @@ public class InterviewController {
         this.interviewService = interviewService;
     }
 
-    @PostMapping
+    @PostMapping("/employer/interviews")
     @ResponseStatus(HttpStatus.CREATED)
     public InterviewResponse schedule(@AuthenticationPrincipal String employerEmail,
                                       @RequestBody InterviewCreateRequest req) {
@@ -29,11 +31,24 @@ public class InterviewController {
         return res;
     }
 
-    @PatchMapping("/{id}/outcome")
+    @PatchMapping("/employer/interviews/{id}/outcome")
     public InterviewResponse updateOutcome(@AuthenticationPrincipal String employerEmail,
                                            @PathVariable Integer id,
                                            @RequestBody InterviewOutcomeRequest req) {
         log.info("Updating outcome for interview id={} to '{}' by employer: {}", id, req.getOutcome(), employerEmail);
         return interviewService.updateOutcome(employerEmail, id, req);
+    }
+
+    @GetMapping("/employer/interviews")
+    public List<InterviewResponse> byApplication(@AuthenticationPrincipal String employerEmail,
+                                                  @RequestParam Integer applicationId) {
+        log.info("Fetching interviews for application id={} by employer: {}", applicationId, employerEmail);
+        return interviewService.getByApplication(employerEmail, applicationId);
+    }
+
+    @GetMapping("/candidate/interviews")
+    public List<InterviewResponse> myInterviews(@AuthenticationPrincipal String candidateEmail) {
+        log.info("Fetching interviews for candidate: {}", candidateEmail);
+        return interviewService.getCandidateInterviews(candidateEmail);
     }
 }

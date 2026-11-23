@@ -6,31 +6,53 @@ import com.recruitment.entity.Interview;
 import com.recruitment.repository.ApplicationRepository;
 import com.recruitment.repository.InterviewRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class InterviewService {
 
     private final InterviewRepository interviewRepository;
     private final ApplicationRepository applicationRepository;
+    private final NotificationService notificationService;
 
     public InterviewService(InterviewRepository interviewRepository,
-                             ApplicationRepository applicationRepository) {
+                             ApplicationRepository applicationRepository,
+                             NotificationService notificationService) {
         this.interviewRepository = interviewRepository;
         this.applicationRepository = applicationRepository;
+        this.notificationService = notificationService;
     }
 
+    @Transactional(readOnly = true)
+    public List<InterviewResponse> getByApplication(String employerEmail, Integer applicationId) {
+        return interviewRepository.findByApplication_ApplicationId(applicationId)
+                .stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<InterviewResponse> getCandidateInterviews(String candidateEmail) {
+        return interviewRepository.findByApplication_Candidate_Email(candidateEmail)
+                .stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    @Transactional
     public InterviewResponse schedule(String employerEmail, InterviewCreateRequest req) {
         Application app = applicationRepository.findById(req.getApplicationId())
                 .orElseThrow(() -> new IllegalArgumentException("Application not found"));
         if (!app.getVacancy().getEmployer().getEmail().equals(employerEmail)) {
             throw new SecurityException("Access denied");
         }
+
         Interview interview = new Interview();
         interview.setApplication(app);
-        interview.setRoundNumber(req.getRoundNumber() != null ? req.getRoundNumber() : 1);
+        // Auto-calculate round number based on existing interviews for this application
+        int existingCount = interviewRepository.findByApplication_ApplicationId(req.getApplicationId()).size();
+        interview.setRoundNumber(existingCount + 1);
         interview.setInterviewDatetime(LocalDateTime.parse(req.getInterviewDatetime(), DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         interview.setMode(req.getMode());
         interview.setVenue(req.getVenue());
@@ -41,9 +63,25 @@ public class InterviewService {
         app.setStatus("Interview Scheduled");
         applicationRepository.save(app);
 
+        // Notify candidate with date/time/mode details
+        String candidateEmail = app.getCandidate().getEmail();
+        String candidateName = app.getCandidate().getFullName();
+        String vacancyTitle = app.getVacancy().getDesignation();
+        String formattedDatetime = saved.getInterviewDatetime()
+                .format(DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a"));
+        String body = "Dear " + candidateName + ", your interview for " + vacancyTitle +
+                " (Round " + saved.getRoundNumber() + ") has been scheduled on " +
+                formattedDatetime + " (" + saved.getMode() + ")." +
+                (saved.getVenue() != null && !saved.getVenue().isBlank() ? " Venue: " + saved.getVenue() + "." : "") +
+                " Interviewer: " + saved.getInterviewerName() + ".";
+
+        notificationService.notify(candidateEmail, "Candidate",
+                "Interview Scheduled — " + vacancyTitle, body, "STATUS_CHANGED");
+
         return toResponse(saved);
     }
 
+    @Transactional
     public InterviewResponse updateOutcome(String employerEmail, Integer interviewId, InterviewOutcomeRequest req) {
         Interview interview = interviewRepository.findById(interviewId)
                 .orElseThrow(() -> new IllegalArgumentException("Interview not found"));

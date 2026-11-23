@@ -66,17 +66,16 @@ function ApplyModal({ vacancy, onClose, onApplied, appliedIds }) {
 
 export default function LandingPage() {
   const navigate = useNavigate()
-  const token = localStorage.getItem('token')
   const role = localStorage.getItem('role')
 
-  const isLoggedInCandidate = !!token && role === 'CANDIDATE'
+  const isLoggedInCandidate = role === 'CANDIDATE'
 
   // Redirect employers away immediately
   useEffect(() => {
-    if (token && role === 'EMPLOYER') {
+    if (role === 'EMPLOYER') {
       navigate('/employer/dashboard', { replace: true })
     }
-  }, [token, role, navigate])
+  }, [role, navigate])
 
   const [vacancies, setVacancies] = useState([])
   const [locationFilter, setLocationFilter] = useState('')
