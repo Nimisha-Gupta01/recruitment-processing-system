@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FaMapMarkerAlt, FaMoneyBillWave, FaCalendarAlt } from 'react-icons/fa'
 import api from '../../api/axios.js'
@@ -28,8 +28,12 @@ export default function JobSearchPage() {
   const [filters, setFilters] = useState({ location: '', salaryMax: '' })
   const [modal, setModal] = useState(null)
   const [coverNote, setCoverNote] = useState('')
+  const [resumeFile, setResumeFile] = useState(null)
+  const [resumeError, setResumeError] = useState('')
   const [modalMsg, setModalMsg] = useState({ text: '', type: '' })
   const [appliedIds, setAppliedIds] = useState(new Set())
+  const [submitting, setSubmitting] = useState(false)
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     api.get('/vacancies/open')
@@ -51,17 +55,53 @@ export default function JobSearchPage() {
   function openModal(vacancy) {
     setModal(vacancy)
     setCoverNote('')
+    setResumeFile(null)
+    setResumeError('')
     setModalMsg({ text: '', type: '' })
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   function closeModal() {
     setModal(null)
   }
 
+  function handleFileChange(e) {
+    const file = e.target.files[0] || null
+    setResumeError('')
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        setResumeError('Only PDF files are accepted.')
+        setResumeFile(null)
+        return
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setResumeError('File must be under 5 MB.')
+        setResumeFile(null)
+        return
+      }
+    }
+    setResumeFile(file)
+  }
+
   async function handleApply() {
+    if (!resumeFile) {
+      setResumeError('Please upload your resume to apply.')
+      return
+    }
     setModalMsg({ text: '', type: '' })
+    setSubmitting(true)
     try {
-      await api.post('/applications', { vacancyId: modal.vacancyId, coverNote })
+      // Step 1: submit application
+      const appRes = await api.post('/applications', { vacancyId: modal.vacancyId, coverNote })
+      const applicationId = appRes.data.applicationId
+
+      // Step 2: upload resume linked to this application
+      const formData = new FormData()
+      formData.append('file', resumeFile)
+      await api.post(`/applications/${applicationId}/resume`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+
       setAppliedIds(s => new Set([...s, modal.vacancyId]))
       setModalMsg({ text: 'Applied successfully!', type: 'success' })
     } catch (err) {
@@ -72,6 +112,8 @@ export default function JobSearchPage() {
       } else {
         setModalMsg({ text: 'Failed to apply. Please try again.', type: 'danger' })
       }
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -136,23 +178,43 @@ export default function JobSearchPage() {
               </div>
               <div className="modal-body">
                 {modalMsg.text && <div className={`alert alert-${modalMsg.type}`}>{modalMsg.text}</div>}
-                <label className="form-label">Cover Note</label>
-                <textarea
-                  className="form-control"
-                  rows={5}
-                  value={coverNote}
-                  onChange={e => setCoverNote(e.target.value)}
-                  disabled={appliedIds.has(modal.vacancyId)}
-                />
+                <div className="mb-3">
+                  <label className="form-label fw-semibold">Resume <span className="text-danger">*</span></label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf"
+                    className={`form-control ${resumeError ? 'is-invalid' : ''}`}
+                    onChange={handleFileChange}
+                    disabled={appliedIds.has(modal.vacancyId) || submitting}
+                  />
+                  {resumeError && <div className="invalid-feedback">{resumeError}</div>}
+                  {resumeFile && !resumeError && (
+                    <div className="form-text text-success">
+                      ✓ {resumeFile.name} ({(resumeFile.size / 1024).toFixed(0)} KB)
+                    </div>
+                  )}
+                  <div className="form-text">PDF only, max 5 MB</div>
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Cover Note</label>
+                  <textarea
+                    className="form-control"
+                    rows={4}
+                    value={coverNote}
+                    onChange={e => setCoverNote(e.target.value)}
+                    disabled={appliedIds.has(modal.vacancyId) || submitting}
+                  />
+                </div>
               </div>
               <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={closeModal}>Close</button>
+                <button className="btn btn-secondary" onClick={closeModal} disabled={submitting}>Close</button>
                 <button
                   className="btn btn-primary"
                   onClick={handleApply}
-                  disabled={appliedIds.has(modal.vacancyId)}
+                  disabled={appliedIds.has(modal.vacancyId) || submitting}
                 >
-                  Submit Application
+                  {submitting ? <><span className="spinner-border spinner-border-sm me-2" />Submitting…</> : 'Submit Application'}
                 </button>
               </div>
             </div>

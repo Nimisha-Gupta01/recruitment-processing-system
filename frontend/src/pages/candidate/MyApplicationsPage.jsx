@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import api from '../../api/axios.js'
 
@@ -176,15 +176,11 @@ function StatusJourney({ status }) {
 
 // ─── Application Card ─────────────────────────────────────────────────────────
 
-function ApplicationCard({ application, interview, onResumeUploaded, onWithdraw }) {
+function ApplicationCard({ application, interview, onWithdraw }) {
   const [expanded, setExpanded] = useState(false)
-  const [file, setFile] = useState(null)
-  const [uploading, setUploading] = useState(false)
-  const [uploadError, setUploadError] = useState(null)
   const [withdrawing, setWithdrawing] = useState(false)
   const [confirmWithdraw, setConfirmWithdraw] = useState(false)
   const [withdrawReason, setWithdrawReason] = useState('')
-  const fileInputRef = useRef(null)
 
   const { applicationId, vacancyTitle, employerOrgName, appliedAt, status, coverNote, resumePath } = application
 
@@ -221,39 +217,6 @@ function ApplicationCard({ application, interview, onResumeUploaded, onWithdraw 
   function extractFilename(path) {
     if (!path) return null
     return path.split('/').pop().split('\\').pop()
-  }
-
-  async function handleUpload() {
-    if (!file) return
-    if (file.size > 5 * 1024 * 1024) {
-      setUploadError('File must be under 5 MB.')
-      return
-    }
-    if (file.type !== 'application/pdf') {
-      setUploadError('Only PDF files are accepted.')
-      return
-    }
-    setUploadError(null)
-    setUploading(true)
-    try {
-      const formData = new FormData()
-      formData.append('file', file)
-      await api.post(`/applications/${applicationId}/resume`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
-      setFile(null)
-      if (fileInputRef.current) fileInputRef.current.value = ''
-      onResumeUploaded()
-    } catch (err) {
-      setUploadError('Upload failed. Please try again.')
-    } finally {
-      setUploading(false)
-    }
-  }
-
-  function handleFileChange(e) {
-    setUploadError(null)
-    setFile(e.target.files[0] || null)
   }
 
   const filename = extractFilename(resumePath)
@@ -414,34 +377,7 @@ function ApplicationCard({ application, interview, onResumeUploaded, onWithdraw 
                 </a>
               </div>
             ) : (
-              <div className="mt-2">
-                <div className="d-flex align-items-center gap-2 flex-wrap">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="application/pdf"
-                    className="form-control form-control-sm"
-                    style={{ maxWidth: 300 }}
-                    onChange={handleFileChange}
-                  />
-                  <button
-                    className="btn btn-sm btn-primary"
-                    onClick={handleUpload}
-                    disabled={uploading || !file}
-                  >
-                    {uploading ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                        Uploading…
-                      </>
-                    ) : 'Upload Resume'}
-                  </button>
-                </div>
-                {uploadError && (
-                  <div className="text-danger mt-1" style={{ fontSize: 13 }}>{uploadError}</div>
-                )}
-                <div className="text-muted mt-1" style={{ fontSize: 12 }}>PDF only, max 5 MB</div>
-              </div>
+              <p className="text-muted mt-2 mb-0" style={{ fontSize: 14 }}>No resume on file.</p>
             )}
           </div>
         </div>
@@ -518,7 +454,6 @@ export default function MyApplicationsPage() {
             key={app.applicationId}
             application={app}
             interview={interviews.find(i => i.applicationId === app.applicationId) || null}
-            onResumeUploaded={loadAll}
             onWithdraw={loadAll}
           />
         ))}
