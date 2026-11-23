@@ -93,14 +93,40 @@ public class InterviewService {
         Interview saved = interviewRepository.save(interview);
 
         Application app = interview.getApplication();
+        String candidateEmail = app.getCandidate().getEmail();
+        String candidateName = app.getCandidate().getFullName();
+        String vacancyTitle = app.getVacancy().getDesignation();
+        String newStatus = null;
+        String subject = null;
+        String body = null;
+
         if ("Selected".equals(req.getOutcome())) {
             app.setStatus("Selected");
+            newStatus = "Selected";
+            subject = "🎉 Congratulations! You've been Selected — " + vacancyTitle;
+            body = "Dear " + candidateName + ", congratulations! You have been selected after your interview for " +
+                   vacancyTitle + ". The employer will be in touch with next steps.";
         } else if ("Rejected".equals(req.getOutcome())) {
             app.setStatus("Rejected");
+            newStatus = "Rejected";
+            subject = "Interview Outcome — " + vacancyTitle;
+            body = "Dear " + candidateName + ", thank you for attending the interview for " + vacancyTitle +
+                   ". Unfortunately, you have not been selected at this time.";
         } else if ("Completed".equals(req.getOutcome())) {
             app.setStatus("Interview Completed");
+            subject = "Interview Completed — " + vacancyTitle;
+            body = "Dear " + candidateName + ", your interview for " + vacancyTitle +
+                   " has been marked as completed. You will hear back from us shortly.";
+        } else if ("Cancelled".equals(req.getOutcome())) {
+            subject = "Interview Cancelled — " + vacancyTitle;
+            body = "Dear " + candidateName + ", your interview for " + vacancyTitle +
+                   " has been cancelled. The employer will contact you to reschedule.";
         }
         applicationRepository.save(app);
+
+        if (subject != null) {
+            notificationService.notify(candidateEmail, "Candidate", subject, body, "STATUS_CHANGED");
+        }
 
         return toResponse(saved);
     }

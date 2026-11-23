@@ -6,10 +6,9 @@ const OUTCOME_OPTIONS = ['Scheduled', 'Completed', 'Cancelled', 'Selected', 'Rej
 const STATUS_BADGE = {
   Withdrawn: 'secondary',
   Rejected: 'danger',
-  Recruited: 'success',
+  Selected: 'success',
   'Interview Scheduled': 'info',
   'Interview Completed': 'warning',
-  Selected: 'success',
   Shortlisted: 'primary',
   Applied: 'secondary',
 };
@@ -112,7 +111,7 @@ function InterviewsPage() {
               </thead>
               <tbody>
                 {interviews.map(iv => {
-                  const isTerminal = ['Withdrawn', 'Rejected', 'Recruited'].includes(iv.appStatus);
+                  const isTerminal = ['Withdrawn', 'Rejected', 'Selected'].includes(iv.appStatus);
                   return (
                     <tr key={iv.interviewId} style={isTerminal ? { opacity: 0.45, background: '#f3f4f6', color: '#9ca3af' } : {}}>
                       <td>

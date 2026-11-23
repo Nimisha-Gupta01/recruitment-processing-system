@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
 
-const APPLICATION_STATUSES = ['Applied', 'Shortlisted', 'Interview Scheduled', 'Interview Completed', 'Selected', 'Offered', 'Recruited', 'Rejected', 'Withdrawn'];
+const APPLICATION_STATUSES = ['Applied', 'Shortlisted', 'Interview Scheduled', 'Interview Completed', 'Selected', 'Rejected', 'Withdrawn'];
 const INTERVIEW_MODES = ['Online', 'In-Person', 'Telephonic'];
 
 function ApplicationsPage() {
@@ -101,13 +101,13 @@ function ApplicationsPage() {
           </thead>
           <tbody>
             {applications.map(app => {
-              const isTerminal = ['Withdrawn', 'Rejected', 'Recruited'].includes(app.status)
+              const isTerminal = ['Withdrawn', 'Rejected', 'Selected'].includes(app.status)
               return (
               <tr key={app.applicationId} style={isTerminal ? { opacity: 0.5, background: '#f3f4f6', color: '#9ca3af', pointerEvents: 'none' } : {}}>
                 <td>
                   {app.candidateName}
                   {isTerminal && (
-                    <span className={`ms-2 badge ${app.status === 'Recruited' ? 'bg-success' : 'bg-secondary'}`} style={{ fontSize: 11 }}>
+                    <span className={`ms-2 badge ${app.status === 'Selected' ? 'bg-success' : 'bg-secondary'}`} style={{ fontSize: 11 }}>
                       {app.status}
                     </span>
                   )}

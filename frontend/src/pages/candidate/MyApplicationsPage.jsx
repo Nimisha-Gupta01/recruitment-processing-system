@@ -64,8 +64,6 @@ const STEPS = [
   'Interview Scheduled',
   'Interview Completed',
   'Selected',
-  'Offered',
-  'Recruited',
 ]
 
 const TERMINAL_NEGATIVE = ['Rejected', 'Withdrawn']
@@ -103,7 +101,10 @@ function StatusJourney({ status }) {
         } else if (isDone) {
           circleStyle = { ...circleStyle, borderColor: '#198754', backgroundColor: '#198754', color: '#fff' }
         } else if (isCurrent) {
-          circleStyle = { ...circleStyle, borderColor: '#0d6efd', backgroundColor: '#0d6efd', color: '#fff' }
+          // Last step (Selected) gets green, intermediate steps get blue
+          const isLastStep = idx === STEPS.length - 1
+          const color = isLastStep ? '#198754' : '#0d6efd'
+          circleStyle = { ...circleStyle, borderColor: color, backgroundColor: color, color: '#fff' }
         } else {
           // future
           circleStyle = { ...circleStyle, borderColor: '#dee2e6', backgroundColor: '#fff', color: '#adb5bd' }
@@ -117,7 +118,7 @@ function StatusJourney({ status }) {
         // Label color
         let labelColor = '#adb5bd'
         if (!isGrayed && isDone) labelColor = '#198754'
-        else if (!isGrayed && isCurrent) labelColor = '#0d6efd'
+        else if (!isGrayed && isCurrent) labelColor = idx === STEPS.length - 1 ? '#198754' : '#0d6efd'
         else if (isGrayed) labelColor = '#6c757d'
 
         return (
@@ -125,7 +126,7 @@ function StatusJourney({ status }) {
             {/* Step node */}
             <div className="d-flex flex-column align-items-center" style={{ minWidth: 60 }}>
               <div className={circleClass} style={circleStyle}>
-                {isDone ? (
+                {isDone || (isCurrent && idx === STEPS.length - 1) ? (
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                     <path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
@@ -187,7 +188,7 @@ function ApplicationCard({ application, interview, onResumeUploaded, onWithdraw 
 
   const { applicationId, vacancyTitle, employerOrgName, appliedAt, status, coverNote, resumePath } = application
 
-  const canWithdraw = !['Withdrawn', 'Rejected', 'Recruited'].includes(status)
+  const canWithdraw = !['Withdrawn', 'Rejected', 'Selected'].includes(status)
 
   async function handleWithdraw() {
     setWithdrawing(true)
@@ -264,14 +265,12 @@ function ApplicationCard({ application, interview, onResumeUploaded, onWithdraw 
     'Interview Scheduled': 'info',
     'Interview Completed': 'warning',
     Selected: 'success',
-    Offered: 'success',
-    Recruited: 'success',
     Rejected: 'danger',
     Withdrawn: 'danger',
   }
   const badgeColor = badgeVariants[status] || 'secondary'
 
-  const isTerminal = ['Withdrawn', 'Rejected', 'Recruited'].includes(status)
+  const isTerminal = ['Withdrawn', 'Rejected', 'Selected'].includes(status)
 
   return (
     <div
@@ -283,18 +282,18 @@ function ApplicationCard({ application, interview, onResumeUploaded, onWithdraw 
         <div
           className="d-flex align-items-center gap-2 px-4 py-2"
           style={{
-            background: status === 'Recruited' ? '#d1fae5' : '#fee2e2',
-            borderBottom: `2px solid ${status === 'Recruited' ? '#6ee7b7' : '#fca5a5'}`,
+            background: status === 'Selected' ? '#d1fae5' : '#fee2e2',
+            borderBottom: `2px solid ${status === 'Selected' ? '#6ee7b7' : '#fca5a5'}`,
             fontSize: 13,
           }}
         >
-          <span style={{ fontSize: 16 }}>{status === 'Recruited' ? '✅' : '🚫'}</span>
+          <span style={{ fontSize: 16 }}>{status === 'Selected' ? '✅' : '🚫'}</span>
           <span className="fw-semibold">
             {status === 'Withdrawn'
               ? 'You have withdrawn this application. No further actions are available.'
               : status === 'Rejected'
               ? 'This application was not selected. No further actions are available.'
-              : 'Congratulations! You have been recruited for this position.'}
+              : 'Congratulations! You have been selected for this position.'}
           </span>
         </div>
       )}
