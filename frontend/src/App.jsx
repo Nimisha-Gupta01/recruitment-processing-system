@@ -14,11 +14,17 @@ import ApplicationsPage from './pages/employer/ApplicationsPage.jsx'
 import InterviewsPage from './pages/employer/InterviewsPage.jsx'
 import CandidateSearchPage from './pages/employer/CandidateSearchPage.jsx'
 import EmployerNotificationsPage from './pages/employer/EmployerNotificationsPage.jsx'
+import AdminLoginPage from './pages/admin/AdminLoginPage.jsx'
+import AdminDashboard from './pages/admin/AdminDashboard.jsx'
 
 function ProtectedRoute({ children, role }) {
   const storedRole = localStorage.getItem('role')
   if (!storedRole) return <Navigate to="/login" replace />
-  if (role && storedRole !== role) return <Navigate to="/login" replace />
+  if (role && storedRole !== role) {
+    if (storedRole === 'ADMIN') return <Navigate to="/admin/dashboard" replace />
+    if (storedRole === 'EMPLOYER') return <Navigate to="/employer/dashboard" replace />
+    return <Navigate to="/login" replace />
+  }
   return children
 }
 
@@ -62,6 +68,10 @@ export default function App() {
         } />
         <Route path="/candidate/notifications" element={
           <ProtectedRoute role="CANDIDATE"><CandidateNotificationsPage /></ProtectedRoute>
+        } />
+        <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route path="/admin/dashboard" element={
+          <ProtectedRoute role="ADMIN"><AdminDashboard /></ProtectedRoute>
         } />
       </Routes>
     </BrowserRouter>

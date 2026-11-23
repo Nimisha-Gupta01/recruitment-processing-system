@@ -61,7 +61,8 @@ CREATE TABLE candidates (
     expected_sal_min DECIMAL(12,2),
     expected_sal_max DECIMAL(12,2),
     created_at      DATETIME        DEFAULT CURRENT_TIMESTAMP,
-    is_active       BOOLEAN         DEFAULT TRUE
+    is_active       BOOLEAN         DEFAULT TRUE,
+    role            VARCHAR(20)     NOT NULL DEFAULT 'CANDIDATE'
 );
 
 -- ------------------------------------------------------------
@@ -180,9 +181,21 @@ CREATE TABLE notifications (
     status          ENUM('Sent','Failed') DEFAULT 'Sent'
 );
 
--- ============================================================
--- INDEXES (for common query patterns)
--- ============================================================
+-- ------------------------------------------------------------
+-- 10. REPORTS (candidates report employers, employers report candidates)
+-- ------------------------------------------------------------
+CREATE TABLE reports (
+    report_id       INT AUTO_INCREMENT PRIMARY KEY,
+    reporter_type   ENUM('CANDIDATE','EMPLOYER') NOT NULL,
+    reporter_id     INT                          NOT NULL,
+    reported_type   ENUM('CANDIDATE','EMPLOYER') NOT NULL,
+    reported_id     INT                          NOT NULL,
+    reason          TEXT                         NOT NULL,
+    created_at      DATETIME                     DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_reports_reported (reported_type, reported_id)
+);
+
+
 
 -- Candidate searches by employers
 CREATE INDEX idx_candidates_degree       ON candidates(degree);

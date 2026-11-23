@@ -35,9 +35,13 @@ export default function RegisterPage() {
     setSuccess(false)
     const endpoint = role === 'EMPLOYER' ? '/auth/register/employer' : '/auth/register/candidate'
     try {
-      await api.post(endpoint, form)
+      const { data } = await api.post(endpoint, form)
       setSuccess(true)
-      setTimeout(() => navigate('/login'), 1500)
+      if (role === 'EMPLOYER' || data?.role === 'PENDING') {
+        // Employer accounts need admin approval — stay on page, show message
+      } else {
+        setTimeout(() => navigate('/login'), 1500)
+      }
     } catch (err) {
       const msg = err.response?.data?.message || err.response?.data || 'Registration failed'
       setError(typeof msg === 'string' ? msg : 'Registration failed')
@@ -53,7 +57,13 @@ export default function RegisterPage() {
       </div>
       <div className="card recpro-card p-4" style={{ width: '500px' }}>
         <h5 className="card-title mb-4 text-center fw-semibold">Create an Account</h5>
-        {success && <div className="alert alert-success">Registered successfully!</div>}
+        {success && role === 'EMPLOYER' && (
+          <div className="alert alert-warning">
+            <strong>Registration submitted!</strong> Your employer account is pending admin approval.
+            You will be able to log in once an admin activates your account.
+          </div>
+        )}
+        {success && role !== 'EMPLOYER' && <div className="alert alert-success">Registered successfully! Redirecting to login...</div>}
         {error && <div className="alert alert-danger">{error}</div>}
         <div className="mb-3">
           <select className="form-select" value={role} onChange={handleRoleChange}>

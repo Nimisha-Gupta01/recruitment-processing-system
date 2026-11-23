@@ -2,11 +2,14 @@ package com.recruitment.controller;
 
 import com.recruitment.dto.CandidateDTOs.*;
 import com.recruitment.service.CandidateService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "Candidate Profile", description = "Candidate profile management")
 @RestController
 @RequestMapping("/api/candidate/profile")
 public class CandidateController {

@@ -2,6 +2,8 @@ package com.recruitment.controller;
 
 import com.recruitment.dto.AuthDTOs.*;
 import com.recruitment.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Tag(name = "Auth", description = "Login, registration and logout")
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -38,6 +41,7 @@ public class AuthController {
         response.addCookie(cookie);
     }
 
+    @Operation(summary = "Register a new employer")
     @PostMapping("/register/employer")
     public ResponseEntity<AuthResponse> registerEmployer(@Valid @RequestBody EmployerRegisterRequest req,
                                                           HttpServletResponse response) {
@@ -47,6 +51,7 @@ public class AuthController {
         return ResponseEntity.ok(auth.withoutToken());
     }
 
+    @Operation(summary = "Register a new candidate")
     @PostMapping("/register/candidate")
     public ResponseEntity<AuthResponse> registerCandidate(@Valid @RequestBody CandidateRegisterRequest req,
                                                            HttpServletResponse response) {
@@ -56,6 +61,7 @@ public class AuthController {
         return ResponseEntity.ok(auth.withoutToken());
     }
 
+    @Operation(summary = "Login — sets JWT as httpOnly cookie")
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest req,
                                                HttpServletResponse response) {
@@ -66,6 +72,7 @@ public class AuthController {
         return ResponseEntity.ok(auth.withoutToken());
     }
 
+    @Operation(summary = "Logout — clears JWT cookie")
     @PostMapping("/logout")
     public ResponseEntity<Map<String, String>> logout(HttpServletResponse response) {
         Cookie cookie = new Cookie("jwt", "");
@@ -77,6 +84,7 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "Logged out"));
     }
 
+    @Operation(summary = "Get current authenticated user info")
     @GetMapping("/me")
     public ResponseEntity<AuthResponse> me(@AuthenticationPrincipal String email) {
         return ResponseEntity.ok(authService.getMe(email));

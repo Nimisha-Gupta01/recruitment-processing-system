@@ -40,6 +40,9 @@ function ApplicationsPage() {
   const [analysing, setAnalysing] = useState(false);
   const [analysed, setAnalysed] = useState(false);
   const [aiModalApp, setAiModalApp] = useState(null);
+  const [reportApp, setReportApp] = useState(null);
+  const [reportReason, setReportReason] = useState('');
+  const [reportMsg, setReportMsg] = useState({ text: '', type: '' });
 
   useEffect(() => {
     api.get('/employer/vacancies')
@@ -120,6 +123,19 @@ function ApplicationsPage() {
       loadApplications(selectedVacancyId);
     } catch {
       setError('Failed to schedule interview.');
+    }
+  }
+
+  async function handleReportCandidate() {
+    if (!reportReason.trim()) return;
+    try {
+      await api.post(`/reports/candidate/${reportApp.candidateId}`, { reason: reportReason });
+      setReportMsg({ text: 'Report submitted.', type: 'success' });
+      setReportReason('');
+      setTimeout(() => { setReportApp(null); setReportMsg({ text: '', type: '' }); }, 2000);
+    } catch (err) {
+      const raw = err.response?.data?.message || err.response?.data || 'Failed';
+      setReportMsg({ text: typeof raw === 'string' ? raw : 'Failed to submit report', type: 'danger' });
     }
   }
 
@@ -236,12 +252,19 @@ function ApplicationsPage() {
                       </button>
                       {!isTerminal && (
                         <button
-                          className="btn btn-sm btn-outline-danger"
+                          className="btn btn-sm btn-outline-danger me-2"
                           onClick={() => handleStatusChange(app.applicationId, 'Rejected')}
                         >
                           Reject
                         </button>
                       )}
+                      <button
+                        className="btn btn-sm btn-outline-secondary"
+                        title="Report this candidate"
+                        onClick={() => { setReportApp(app); setReportReason(''); setReportMsg({ text: '', type: '' }); }}
+                      >
+                        🚩
+                      </button>
                     </td>
                   </tr>
                 );
@@ -308,6 +331,35 @@ function ApplicationsPage() {
               </div>
               <div className="modal-footer">
                 <button className="btn btn-secondary" onClick={() => setAiModalApp(null)}>Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {reportApp && (
+        <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Report Candidate — {reportApp.candidateName}</h5>
+                <button className="btn-close" onClick={() => setReportApp(null)} />
+              </div>
+              <div className="modal-body">
+                {reportMsg.text && <div className={`alert alert-${reportMsg.type}`}>{reportMsg.text}</div>}
+                <label className="form-label">Reason for reporting</label>
+                <textarea
+                  className="form-control"
+                  rows={4}
+                  placeholder="Describe why you are reporting this candidate..."
+                  value={reportReason}
+                  onChange={e => setReportReason(e.target.value)}
+                />
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setReportApp(null)}>Cancel</button>
+                <button className="btn btn-danger" onClick={handleReportCandidate} disabled={!reportReason.trim()}>
+                  Submit Report
+                </button>
               </div>
             </div>
           </div>

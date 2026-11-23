@@ -2,6 +2,8 @@ package com.recruitment.controller;
 
 import com.recruitment.dto.InterviewDTOs.*;
 import com.recruitment.service.InterviewService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "Interviews", description = "Schedule and manage interviews")
 @RestController
 @RequestMapping("/api")
 public class InterviewController {

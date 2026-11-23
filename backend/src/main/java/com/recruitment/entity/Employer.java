@@ -39,7 +39,7 @@ public class Employer {
     @Column(updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    private Boolean isActive = true;
+    private Boolean isActive = false;
 
     public Integer getEmployerId() { return employerId; }
     public void setEmployerId(Integer employerId) { this.employerId = employerId; }

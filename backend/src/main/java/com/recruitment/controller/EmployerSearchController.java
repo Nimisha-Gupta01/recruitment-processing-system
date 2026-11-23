@@ -2,6 +2,8 @@ package com.recruitment.controller;
 
 import com.recruitment.dto.EmployerSearchDTOs.CandidateSearchResponse;
 import com.recruitment.service.EmployerSearchService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
@@ -9,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
 
+@Tag(name = "Candidate Search", description = "Employer-side candidate search")
 @RestController
 @RequestMapping("/api/employer/candidates")
 public class EmployerSearchController {

@@ -2,6 +2,8 @@ package com.recruitment.controller;
 
 import com.recruitment.dto.ApplicationDTOs.ApplicationResponse;
 import com.recruitment.service.ApplicationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -18,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+@Tag(name = "Resumes", description = "Resume upload and download")
 @RestController
 @RequestMapping("/api")
 public class ResumeController {

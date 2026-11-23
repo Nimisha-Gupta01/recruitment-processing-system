@@ -3,6 +3,8 @@ package com.recruitment.controller;
 import com.recruitment.dto.ApplicationDTOs.ApplicationResponse;
 import com.recruitment.service.AiAnalysisService;
 import com.recruitment.service.ApplicationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "AI Analysis", description = "AI-powered resume scoring via Hyperspace")
 @RestController
 @RequestMapping("/api/employer")
 public class AiAnalysisController {
@@ -23,6 +26,7 @@ public class AiAnalysisController {
         this.applicationService = applicationService;
     }
 
+    @Operation(summary = "AI-score and rank candidate resumes for a vacancy")
     @PostMapping("/vacancies/{vacancyId}/ai-analyse")
     public List<ApplicationResponse> analyse(@AuthenticationPrincipal String employerEmail,
                                               @PathVariable Integer vacancyId) {

@@ -24,8 +24,13 @@ export default function EmployerLoginPage() {
       localStorage.setItem('name', data.name)
       navigate('/employer/dashboard')
     } catch (err) {
-      const msg = err.response?.data?.message || err.response?.data || 'Invalid credentials'
-      setError(typeof msg === 'string' ? msg : 'Invalid credentials')
+      const raw = err.response?.data?.message || err.response?.data || 'Invalid credentials'
+      const msg = typeof raw === 'string' ? raw : 'Invalid credentials'
+      if (msg.toLowerCase().includes('pending')) {
+        setError('Your account is pending admin approval. Please wait for activation.')
+      } else {
+        setError(msg)
+      }
     }
   }
 

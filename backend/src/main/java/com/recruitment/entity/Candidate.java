@@ -52,6 +52,9 @@ public class Candidate {
 
     private Boolean isActive = true;
 
+    @Column(length = 20)
+    private String role = "CANDIDATE";
+
     @OneToMany(mappedBy = "candidate", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<CandidateSkill> skills;
 
@@ -113,6 +116,9 @@ public class Candidate {
 
     public Boolean getIsActive() { return isActive; }
     public void setIsActive(Boolean isActive) { this.isActive = isActive; }
+
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
 
     public List<CandidateSkill> getSkills() { return skills; }
     public void setSkills(List<CandidateSkill> skills) { this.skills = skills; }

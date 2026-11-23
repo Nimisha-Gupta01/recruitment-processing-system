@@ -44,9 +44,8 @@ public class AuthService {
         employer.setPasswordHash(passwordEncoder.encode(req.getPassword()));
         employer.setAddress(req.getAddress());
         employer.setWebsite(req.getWebsite());
-        Employer saved = employerRepo.save(employer);
-        String token = jwtUtil.generateToken(saved.getEmail(), "EMPLOYER", saved.getEmployerId());
-        return new AuthResponse(token, "EMPLOYER", saved.getEmployerId(), saved.getContactName());
+        employerRepo.save(employer);
+        return new AuthResponse(null, "PENDING", null, employer.getContactName());
     }
 
     public AuthResponse registerCandidate(CandidateRegisterRequest req) {
@@ -80,8 +79,19 @@ public class AuthService {
             if (!passwordEncoder.matches(req.getPassword(), employer.getPasswordHash())) {
                 throw new IllegalArgumentException("Invalid credentials");
             }
+            if (!Boolean.TRUE.equals(employer.getIsActive())) {
+                throw new IllegalArgumentException("Account pending admin approval");
+            }
             String token = jwtUtil.generateToken(employer.getEmail(), "EMPLOYER", employer.getEmployerId());
             return new AuthResponse(token, "EMPLOYER", employer.getEmployerId(), employer.getContactName());
+        } else if ("ADMIN".equals(req.getRole())) {
+            Candidate admin = candidateRepo.findByEmail(req.getEmail())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
+            if (!"ADMIN".equals(admin.getRole()) || !passwordEncoder.matches(req.getPassword(), admin.getPasswordHash())) {
+                throw new IllegalArgumentException("Invalid credentials");
+            }
+            String token = jwtUtil.generateToken(admin.getEmail(), "ADMIN", admin.getCandidateId());
+            return new AuthResponse(token, "ADMIN", admin.getCandidateId(), admin.getFullName());
         } else {
             Candidate candidate = candidateRepo.findByEmail(req.getEmail())
                     .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));

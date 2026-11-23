@@ -2,6 +2,8 @@ package com.recruitment.controller;
 
 import com.recruitment.dto.ApplicationDTOs.*;
 import com.recruitment.service.ApplicationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "Applications", description = "Apply, withdraw, and manage job applications")
 @RestController
 @RequestMapping("/api")
 public class ApplicationController {
@@ -21,6 +24,7 @@ public class ApplicationController {
         this.applicationService = applicationService;
     }
 
+    @Operation(summary = "Submit a job application (candidate)")
     @PostMapping("/applications")
     @ResponseStatus(HttpStatus.CREATED)
     public ApplicationResponse apply(@AuthenticationPrincipal String candidateEmail,
@@ -31,12 +35,14 @@ public class ApplicationController {
         return res;
     }
 
+    @Operation(summary = "Get all applications for the logged-in candidate")
     @GetMapping("/applications/my")
     public List<ApplicationResponse> myApplications(@AuthenticationPrincipal String candidateEmail) {
         log.info("Fetching applications for candidate: {}", candidateEmail);
         return applicationService.getCandidateApplications(candidateEmail);
     }
 
+    @Operation(summary = "Get applications for a vacancy (employer)")
     @GetMapping("/employer/applications")
     public List<ApplicationResponse> vacancyApplications(@AuthenticationPrincipal String employerEmail,
                                                           @RequestParam Integer vacancyId) {
@@ -44,6 +50,7 @@ public class ApplicationController {
         return applicationService.getVacancyApplications(employerEmail, vacancyId);
     }
 
+    @Operation(summary = "Withdraw an application (candidate)")
     @PatchMapping("/applications/{id}/withdraw")
     public ApplicationResponse withdraw(@AuthenticationPrincipal String candidateEmail,
                                         @PathVariable Integer id,
@@ -52,6 +59,7 @@ public class ApplicationController {
         return applicationService.withdrawApplication(candidateEmail, id, req.getReason());
     }
 
+    @Operation(summary = "Update application status (employer)")
     @PatchMapping("/employer/applications/{id}/status")
     public ApplicationResponse updateStatus(@AuthenticationPrincipal String employerEmail,
                                              @PathVariable Integer id,

@@ -2,6 +2,8 @@ package com.recruitment.controller;
 
 import com.recruitment.dto.VacancyDTOs.*;
 import com.recruitment.service.VacancyService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "Vacancies", description = "Employer vacancy management")
 @RestController
 @RequestMapping("/api/employer/vacancies")
 public class VacancyController {

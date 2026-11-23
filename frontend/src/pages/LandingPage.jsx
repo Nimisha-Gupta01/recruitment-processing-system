@@ -64,6 +64,55 @@ function ApplyModal({ vacancy, onClose, onApplied, appliedIds }) {
   )
 }
 
+function ReportModal({ vacancy, onClose }) {
+  const [reason, setReason] = useState('')
+  const [msg, setMsg] = useState({ text: '', type: '' })
+
+  async function handleSubmit() {
+    if (!reason.trim()) return
+    try {
+      await api.post(`/reports/employer/${vacancy.employerId}`, { reason })
+      setMsg({ text: 'Report submitted. Admin will review it.', type: 'success' })
+      setReason('')
+      setTimeout(onClose, 2000)
+    } catch (err) {
+      const raw = err.response?.data?.message || err.response?.data || 'Failed to submit report'
+      setMsg({ text: typeof raw === 'string' ? raw : 'Failed to submit report', type: 'danger' })
+    }
+  }
+
+  return (
+    <div className="modal d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+      <div className="modal-dialog">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h5 className="modal-title">Report — {vacancy.employerOrgName}</h5>
+            <button type="button" className="btn-close" onClick={onClose} />
+          </div>
+          <div className="modal-body">
+            {msg.text && <div className={`alert alert-${msg.type}`}>{msg.text}</div>}
+            <label className="form-label">Reason for reporting</label>
+            <textarea
+              className="form-control"
+              rows={4}
+              placeholder="Describe why you are reporting this employer..."
+              value={reason}
+              onChange={e => setReason(e.target.value)}
+            />
+          </div>
+          <div className="modal-footer">
+            <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+            <button className="btn btn-danger" onClick={handleSubmit} disabled={!reason.trim()}>
+              Submit Report
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
 export default function LandingPage() {
   const navigate = useNavigate()
   const role = localStorage.getItem('role')
@@ -81,6 +130,7 @@ export default function LandingPage() {
   const [locationFilter, setLocationFilter] = useState('')
   const [appliedIds, setAppliedIds] = useState(new Set())
   const [modal, setModal] = useState(null)
+  const [reportModal, setReportModal] = useState(null)
   const [stats, setStats] = useState({ openings: 3, companies: 2, candidates: 5 })
 
   useEffect(() => {
@@ -144,6 +194,7 @@ export default function LandingPage() {
         </span>
         <div className="navbar-nav ms-auto d-flex flex-row align-items-center gap-3">
           <Link to="/employer/login" className="nav-link text-white">For Employers</Link>
+          <Link to="/admin/login" className="nav-link text-white-50 small">Admin</Link>
           {isLoggedInCandidate ? (
             <>
               <button className="btn btn-outline-light btn-sm" onClick={() => navigate('/candidate/dashboard')}>
@@ -219,14 +270,23 @@ export default function LandingPage() {
                   <p className="card-text mb-1"><small>💰 {formatSalary(v.salaryMin)} – {formatSalary(v.salaryMax)}</small></p>
                   <p className="card-text"><small>Deadline: {v.applicationDeadline}</small></p>
                 </div>
-                <div className="card-footer">
+                <div className="card-footer d-flex gap-2">
                   <button
-                    className="btn btn-primary btn-sm w-100"
+                    className="btn btn-primary btn-sm flex-grow-1"
                     onClick={() => handleApplyClick(v)}
                     disabled={isLoggedInCandidate && appliedIds.has(v.vacancyId)}
                   >
                     {isLoggedInCandidate && appliedIds.has(v.vacancyId) ? 'Applied' : 'Apply Now'}
                   </button>
+                  {isLoggedInCandidate && (
+                    <button
+                      className="btn btn-outline-danger btn-sm"
+                      title="Report this employer"
+                      onClick={() => setReportModal(v)}
+                    >
+                      🚩
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -244,6 +304,14 @@ export default function LandingPage() {
           onClose={() => setModal(null)}
           onApplied={handleApplied}
           appliedIds={appliedIds}
+        />
+      )}
+
+      {/* Report Modal */}
+      {reportModal && (
+        <ReportModal
+          vacancy={reportModal}
+          onClose={() => setReportModal(null)}
         />
       )}
     </>

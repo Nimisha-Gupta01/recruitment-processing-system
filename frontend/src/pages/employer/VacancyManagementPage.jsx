@@ -100,7 +100,12 @@ function VacancyManagementPage() {
               <td>{v.designation}</td>
               <td>{v.department}</td>
               <td>{v.location}</td>
-              <td><span className={`badge bg-${v.status === 'Open' ? 'success' : 'secondary'}`}>{v.status}</span></td>
+              <td>
+                <span className={`badge bg-${v.status === 'Open' ? 'success' : 'secondary'}`}>{v.status}</span>
+                {v.status === 'Open' && v.applicationDeadline && new Date(v.applicationDeadline) < new Date() && (
+                  <span className="badge bg-warning text-dark ms-1" style={{ fontSize: '0.7em' }}>Deadline passed</span>
+                )}
+              </td>
               <td>{v.numOpenings}</td>
               <td>{v.applicationDeadline}</td>
               <td>
