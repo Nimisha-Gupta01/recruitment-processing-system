@@ -40,10 +40,22 @@ public class ApplicationService {
         if (applicationRepository.existsByVacancy_VacancyIdAndCandidate_CandidateIdAndStatusNot(vacancy.getVacancyId(), candidate.getCandidateId(), "Withdrawn")) {
             throw new IllegalArgumentException("Already applied");
         }
-        // Remove any previous withdrawn application so the new one can be created cleanly
+        // Enforce 3-month cooldown after withdrawal
         applicationRepository.findByVacancy_VacancyIdAndCandidate_CandidateId(vacancy.getVacancyId(), candidate.getCandidateId())
-                .ifPresent(applicationRepository::delete);
-        applicationRepository.flush();
+                .ifPresent(prev -> {
+                    java.time.LocalDateTime withdrawnAt = prev.getWithdrawnAt();
+                    java.time.LocalDateTime earliestReapply = (withdrawnAt != null ? withdrawnAt : prev.getAppliedAt())
+                            .plusMonths(3);
+                    if (java.time.LocalDateTime.now().isBefore(earliestReapply)) {
+                        java.time.LocalDate reapplyDate = earliestReapply.toLocalDate();
+                        throw new IllegalArgumentException(
+                            "You cannot re-apply for this position for 3 months after withdrawing. You may apply again from " + reapplyDate + "."
+                        );
+                    }
+                    // Cooldown passed — remove old withdrawn record
+                    applicationRepository.delete(prev);
+                    applicationRepository.flush();
+                });
         Application app = new Application();
         app.setVacancy(vacancy);
         app.setCandidate(candidate);
@@ -140,6 +152,7 @@ public class ApplicationService {
             throw new IllegalArgumentException("Application already withdrawn");
         }
         app.setStatus("Withdrawn");
+        app.setWithdrawnAt(java.time.LocalDateTime.now());
         ApplicationResponse res = toResponse(applicationRepository.save(app));
 
         // Notify employer — include reason if provided

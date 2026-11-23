@@ -30,6 +30,8 @@ public class Application {
     @Column(length = 500)
     private String resumePath;
 
+    private LocalDateTime withdrawnAt;
+
     private Integer aiScore;
 
     @Column(columnDefinition = "TEXT")
@@ -55,6 +57,9 @@ public class Application {
 
     public String getResumePath() { return resumePath; }
     public void setResumePath(String resumePath) { this.resumePath = resumePath; }
+
+    public LocalDateTime getWithdrawnAt() { return withdrawnAt; }
+    public void setWithdrawnAt(LocalDateTime withdrawnAt) { this.withdrawnAt = withdrawnAt; }
 
     public Integer getAiScore() { return aiScore; }
     public void setAiScore(Integer aiScore) { this.aiScore = aiScore; }

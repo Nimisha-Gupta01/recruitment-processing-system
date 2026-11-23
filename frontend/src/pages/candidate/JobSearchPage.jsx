@@ -109,6 +109,8 @@ export default function JobSearchPage() {
       const msg = typeof rawMsg === 'string' ? rawMsg : (rawMsg?.message || rawMsg?.error || '')
       if (typeof msg === 'string' && msg.toLowerCase().includes('already applied')) {
         setModalMsg({ text: 'You have already applied for this position.', type: 'warning' })
+      } else if (typeof msg === 'string' && msg.toLowerCase().includes('cannot re-apply')) {
+        setModalMsg({ text: msg, type: 'warning' })
       } else {
         setModalMsg({ text: 'Failed to apply. Please try again.', type: 'danger' })
       }
