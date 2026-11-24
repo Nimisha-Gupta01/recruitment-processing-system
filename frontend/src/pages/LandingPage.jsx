@@ -383,15 +383,13 @@ export default function LandingPage() {
                   >
                     {isLoggedInCandidate && appliedIds.has(v.vacancyId) ? 'Applied' : 'Apply Now'}
                   </button>
-                  {isLoggedInCandidate && (
-                    <button
-                      className="btn btn-outline-danger btn-sm"
-                      title="Report this vacancy"
-                      onClick={() => setReportModal(v)}
-                    >
-                      Report
-                    </button>
-                  )}
+                  <button
+                    className="btn btn-outline-danger btn-sm"
+                    title="Report this vacancy"
+                    onClick={() => isLoggedInCandidate ? setReportModal(v) : navigate('/login')}
+                  >
+                    Report
+                  </button>
                 </div>
               </div>
             </div>
