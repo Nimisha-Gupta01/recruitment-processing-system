@@ -3,6 +3,109 @@ import { useNavigate } from 'react-router-dom'
 import { FaMapMarkerAlt, FaMoneyBillWave, FaCalendarAlt } from 'react-icons/fa'
 import api from '../../api/axios.js'
 
+const ISSUE_CATEGORIES = [
+  'Fake job posting',
+  'Ghost employer (no response)',
+  'Unprofessional behavior',
+  'Misleading job description',
+  'Asked for money/fees',
+  'Interview was not conducted fairly',
+  'Other',
+]
+
+const STAR_LABELS = ['', 'Very Poor', 'Poor', 'Average', 'Good', 'Excellent']
+
+function StarRating({ value, onChange }) {
+  const [hovered, setHovered] = useState(0)
+  return (
+    <div className="d-flex align-items-center gap-1">
+      {[1, 2, 3, 4, 5].map(star => (
+        <span
+          key={star}
+          style={{ fontSize: 32, cursor: 'pointer', color: star <= (hovered || value) ? '#f59e0b' : '#d1d5db', transition: 'color 0.1s', lineHeight: 1, userSelect: 'none' }}
+          onMouseEnter={() => setHovered(star)}
+          onMouseLeave={() => setHovered(0)}
+          onClick={() => onChange(star)}
+        >★</span>
+      ))}
+      {(hovered || value) > 0 && (
+        <span className="ms-2 text-muted" style={{ fontSize: 13 }}>{STAR_LABELS[hovered || value]}</span>
+      )}
+    </div>
+  )
+}
+
+function ReportModal({ vacancy, onClose }) {
+  const [rating, setRating] = useState(0)
+  const [category, setCategory] = useState('')
+  const [details, setDetails] = useState('')
+  const [msg, setMsg] = useState({ text: '', type: '' })
+  const [submitting, setSubmitting] = useState(false)
+  const canSubmit = rating > 0 && category && details.trim().length >= 10
+
+  async function handleSubmit() {
+    if (!canSubmit) return
+    setSubmitting(true)
+    const fullReason = `[Rating: ${rating}/5] [Issue: ${category}] ${details.trim()}`
+    try {
+      await api.post(`/reports/employer/${vacancy.employerId}`, { reason: fullReason })
+      setMsg({ text: 'Thank you. Your report has been submitted and will be reviewed by our team.', type: 'success' })
+      setTimeout(onClose, 2500)
+    } catch (err) {
+      const raw = err.response?.data?.message || err.response?.data || 'Failed to submit report'
+      setMsg({ text: typeof raw === 'string' ? raw : 'Failed to submit report', type: 'danger' })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="modal d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content">
+          <div className="modal-header border-0 pb-0">
+            <div>
+              <h5 className="modal-title fw-bold mb-0">Report Employer</h5>
+              <p className="text-muted small mb-0">{vacancy.employerOrgName} · {vacancy.designation}</p>
+            </div>
+            <button type="button" className="btn-close" onClick={onClose} />
+          </div>
+          <div className="modal-body pt-3">
+            {msg.text && <div className={`alert alert-${msg.type} mb-3`}>{msg.text}</div>}
+            <div className="mb-4">
+              <label className="form-label fw-semibold mb-2">Overall Experience with this Employer</label>
+              <StarRating value={rating} onChange={setRating} />
+              <div className="text-muted mt-1" style={{ fontSize: 12 }}>Rate the recruiter's overall conduct (1 = very poor, 5 = excellent)</div>
+            </div>
+            <div className="mb-4">
+              <label className="form-label fw-semibold">Issue Category</label>
+              <div className="d-flex flex-wrap gap-2 mt-1">
+                {ISSUE_CATEGORIES.map(cat => (
+                  <button key={cat} type="button" className="btn btn-sm"
+                    style={{ borderRadius: 20, border: `1.5px solid ${category === cat ? '#dc3545' : '#dee2e6'}`, background: category === cat ? '#dc354520' : '#fff', color: category === cat ? '#dc3545' : '#495057', fontWeight: category === cat ? 600 : 400, fontSize: 13 }}
+                    onClick={() => setCategory(cat)}
+                  >{cat}</button>
+                ))}
+              </div>
+            </div>
+            <div className="mb-2">
+              <label className="form-label fw-semibold">Details <span className="text-muted fw-normal ms-1" style={{ fontSize: 12 }}>(min. 10 characters)</span></label>
+              <textarea className="form-control" rows={4} placeholder="Please describe your experience in detail. Your report is confidential." value={details} onChange={e => setDetails(e.target.value)} style={{ resize: 'none', fontSize: 14 }} />
+              <div className="text-end text-muted mt-1" style={{ fontSize: 11 }}>{details.length} chars</div>
+            </div>
+          </div>
+          <div className="modal-footer border-0 pt-0">
+            <button className="btn btn-outline-secondary" onClick={onClose}>Cancel</button>
+            <button className="btn btn-danger" onClick={handleSubmit} disabled={!canSubmit || submitting}>
+              {submitting ? <><span className="spinner-border spinner-border-sm me-1" />Submitting…</> : 'Submit Report'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function CandidateNavbar() {
   const navigate = useNavigate()
   function logout() { localStorage.clear(); navigate('/') }
@@ -27,6 +130,7 @@ export default function JobSearchPage() {
   const [vacancies, setVacancies] = useState([])
   const [filters, setFilters] = useState({ location: '', salaryMax: '' })
   const [modal, setModal] = useState(null)
+  const [reportModal, setReportModal] = useState(null)
   const [coverNote, setCoverNote] = useState('')
   const [resumeFile, setResumeFile] = useState(null)
   const [resumeError, setResumeError] = useState('')
@@ -154,13 +258,19 @@ export default function JobSearchPage() {
                   <p className="card-text mb-1"><small><FaMoneyBillWave color="#6c757d" className="me-1" />{formatSalary(v.salaryMin)} – {formatSalary(v.salaryMax)}</small></p>
                   <p className="card-text"><small><FaCalendarAlt color="#6c757d" className="me-1" />Deadline: {v.applicationDeadline}</small></p>
                 </div>
-                <div className="card-footer">
+                <div className="card-footer d-flex gap-2">
                   <button
-                    className="btn btn-primary btn-sm w-100"
+                    className="btn btn-primary btn-sm flex-grow-1"
                     onClick={() => openModal(v)}
                     disabled={appliedIds.has(v.vacancyId)}
                   >
                     {appliedIds.has(v.vacancyId) ? 'Applied' : 'Apply'}
+                  </button>
+                  <button
+                    className="btn btn-outline-danger btn-sm"
+                    onClick={() => setReportModal(v)}
+                  >
+                    Report
                   </button>
                 </div>
               </div>
@@ -222,6 +332,13 @@ export default function JobSearchPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {reportModal && (
+        <ReportModal
+          vacancy={reportModal}
+          onClose={() => setReportModal(null)}
+        />
       )}
     </>
   )
