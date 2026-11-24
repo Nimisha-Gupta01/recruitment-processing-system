@@ -4,6 +4,10 @@
 
 USE recruitment_db;
 
+-- Admin user (role=ADMIN stored in candidates table)
+INSERT IGNORE INTO candidates (full_name, email, phone, password_hash, dob, gender, degree, institution, year_of_passing, percentage, total_exp_yrs, expected_sal_min, expected_sal_max, role)
+VALUES ('Admin User', 'admin@recpro.com', '0000000000', '$2b$10$3zuH6paZZiQ0VacFQc2cXu7Dz2ng9DnGOXhqGhHCwrvVE5cSCRUaC', '1990-01-01', 'Other', 'N/A', 'N/A', 2000, 0, 0, 0, 0, 'ADMIN');
+
 -- Employer 2
 INSERT IGNORE INTO employers (org_name, contact_name, email, phone, password_hash)
 VALUES ('Infosys Ltd', 'Meera Nair', 'hr@infosys.com', '9876500001',

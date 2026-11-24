@@ -35,10 +35,14 @@ export default function EmployerLoginPage() {
   }
 
   return (
-    <div className="d-flex justify-content-center align-items-center vh-100">
-      <div className="card p-4" style={{ width: '400px' }}>
-        <h4 className="card-title mb-4 text-center">Employer Login</h4>
-        {error && <div className="alert alert-danger">{error}</div>}
+    <div className="d-flex flex-column justify-content-center align-items-center vh-100" style={{ backgroundColor: '#0f172a' }}>
+      <div className="mb-4 text-center">
+        <div style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.5px', color: '#fff' }}>RecPro</div>
+        <div style={{ fontSize: '0.9rem', color: '#94a3b8' }}>Hire smarter, faster.</div>
+      </div>
+      <div className="card shadow p-4" style={{ width: '400px', borderRadius: 12 }}>
+        <h5 className="card-title mb-4 text-center fw-semibold">Employer Login</h5>
+        {error && <div className="alert alert-danger py-2">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
             <label className="form-label">Email</label>
@@ -49,6 +53,7 @@ export default function EmployerLoginPage() {
               value={form.email}
               onChange={handleChange}
               required
+              autoFocus
             />
           </div>
           <div className="mb-3">
@@ -72,9 +77,9 @@ export default function EmployerLoginPage() {
               </button>
             </div>
           </div>
-          <button type="submit" className="btn btn-primary w-100">Login</button>
+          <button type="submit" className="btn btn-dark w-100">Login</button>
         </form>
-        <p className="text-center mt-3">
+        <p className="text-center mt-3 small">
           Don&apos;t have an account? <Link to="/register">Register as Employer</Link>
         </p>
         <hr />

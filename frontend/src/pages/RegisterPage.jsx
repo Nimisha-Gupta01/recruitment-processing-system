@@ -49,13 +49,13 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="d-flex flex-column justify-content-center align-items-center min-vh-100 py-4">
+    <div className="d-flex flex-column justify-content-center align-items-center min-vh-100 py-4" style={{ backgroundColor: '#0f172a' }}>
       <div className="mb-4 text-center">
-        <FaBriefcase size={32} color="#2563eb" className="mb-2" />
-        <div className="recpro-brand" style={{ fontSize: '2rem' }}>RecPro</div>
-        <div className="text-muted" style={{ fontSize: '0.9rem' }}>Your career, simplified.</div>
+        <FaBriefcase size={32} color="#60a5fa" className="mb-2" />
+        <div style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.5px', color: '#fff' }}>RecPro</div>
+        <div style={{ fontSize: '0.9rem', color: '#94a3b8' }}>Your career, simplified.</div>
       </div>
-      <div className="card recpro-card p-4" style={{ width: '500px' }}>
+      <div className="card shadow p-4" style={{ width: '500px', borderRadius: 12 }}>
         <h5 className="card-title mb-4 text-center fw-semibold">Create an Account</h5>
         {success && role === 'EMPLOYER' && (
           <div className="alert alert-warning">

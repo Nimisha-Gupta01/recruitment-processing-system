@@ -29,8 +29,9 @@ function ScoreBadge({ score }) {
 
 function ApplicationsPage() {
   const [vacancies, setVacancies] = useState([]);
-  const [selectedVacancyId, setSelectedVacancyId] = useState('');
-  const [applications, setApplications] = useState([]);
+  const [filterVacancyId, setFilterVacancyId] = useState('');
+  const [allApplications, setAllApplications] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showInterviewModal, setShowInterviewModal] = useState(false);
   const [selectedAppId, setSelectedAppId] = useState(null);
@@ -44,53 +45,60 @@ function ApplicationsPage() {
   const [reportReason, setReportReason] = useState('');
   const [reportMsg, setReportMsg] = useState({ text: '', type: '' });
 
-  useEffect(() => {
-    api.get('/employer/vacancies')
-      .then(res => setVacancies(res.data))
-      .catch(() => setError('Failed to load vacancies.'));
-  }, []);
-
-  async function loadApplications(vacancyId) {
+  async function loadAll() {
+    setLoading(true);
     try {
-      const res = await api.get(`/employer/applications?vacancyId=${vacancyId}`);
-      setApplications(res.data);
+      const vacRes = await api.get('/employer/vacancies');
+      const vacs = vacRes.data;
+      setVacancies(vacs);
+      const appResults = await Promise.all(
+        vacs.map(v =>
+          api.get(`/employer/applications?vacancyId=${v.vacancyId}`)
+            .then(r => r.data.map(a => ({ ...a, vacancyDesignation: v.designation, vacancyLocation: v.location })))
+            .catch(() => [])
+        )
+      );
+      setAllApplications(appResults.flat());
     } catch {
       setError('Failed to load applications.');
-      setApplications([]);
+    } finally {
+      setLoading(false);
     }
   }
 
-  function handleVacancyChange(e) {
-    const id = e.target.value;
-    setSelectedVacancyId(id);
-    setAnalysed(false);
-    if (id) loadApplications(id);
-    else setApplications([]);
-  }
+  useEffect(() => { loadAll(); }, []);
+
+  const applications = filterVacancyId
+    ? allApplications.filter(a => String(a.vacancyId) === String(filterVacancyId))
+    : allApplications;
 
   async function handleStatusChange(appId, status) {
-    setApplications(prev => prev.map(a => a.applicationId === appId ? { ...a, status } : a));
+    setAllApplications(prev => prev.map(a => a.applicationId === appId ? { ...a, status } : a));
     try {
       await api.patch(`/employer/applications/${appId}/status`, { status });
     } catch {
       setError('Failed to update status.');
-      loadApplications(selectedVacancyId);
+      loadAll();
     }
   }
 
   async function handleRunAiAnalysis() {
+    if (!filterVacancyId) return;
     setAnalysing(true);
     setError('');
     try {
-      const res = await api.post(`/employer/vacancies/${selectedVacancyId}/ai-analyse`);
-      // Sort by score descending (nulls last)
+      const res = await api.post(`/employer/vacancies/${filterVacancyId}/ai-analyse`);
       const sorted = [...res.data].sort((a, b) => {
         if (a.aiScore == null && b.aiScore == null) return 0;
         if (a.aiScore == null) return 1;
         if (b.aiScore == null) return -1;
         return b.aiScore - a.aiScore;
       });
-      setApplications(sorted);
+      // Merge AI scores back into allApplications
+      setAllApplications(prev => prev.map(a => {
+        const updated = sorted.find(s => s.applicationId === a.applicationId);
+        return updated ? { ...a, aiScore: updated.aiScore, aiSummary: updated.aiSummary } : a;
+      }));
       setAnalysed(true);
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'AI analysis failed.';
@@ -120,7 +128,7 @@ function ApplicationsPage() {
         interviewerName: interviewForm.interviewerName,
       });
       setShowInterviewModal(false);
-      loadApplications(selectedVacancyId);
+      loadAll();
     } catch {
       setError('Failed to schedule interview.');
     }
@@ -152,42 +160,51 @@ function ApplicationsPage() {
         {error}
         <button type="button" className="btn-close" onClick={() => setError('')} />
       </div>}
-      <div className="mb-3 col-md-4">
-        <label className="form-label">Select Vacancy</label>
-        <select className="form-select" value={selectedVacancyId} onChange={handleVacancyChange}>
-          <option value="">-- Select a Vacancy --</option>
-          {vacancies.map(v => (
-            <option key={v.vacancyId} value={v.vacancyId}>{v.designation} — {v.location}</option>
-          ))}
-        </select>
+
+      <div className="row g-2 mb-3 align-items-end">
+        <div className="col-md-4">
+          <label className="form-label">Filter by Vacancy</label>
+          <select className="form-select" value={filterVacancyId} onChange={e => { setFilterVacancyId(e.target.value); setAnalysed(false); }}>
+            <option value="">All Vacancies</option>
+            {vacancies.map(v => (
+              <option key={v.vacancyId} value={v.vacancyId}>{v.designation} — {v.location}</option>
+            ))}
+          </select>
+        </div>
+        {filterVacancyId && (
+          <div className="col-auto">
+            <button
+              className="btn btn-outline-primary d-flex align-items-center gap-2"
+              onClick={handleRunAiAnalysis}
+              disabled={analysing}
+            >
+              {analysing ? (
+                <><span className="spinner-border spinner-border-sm" /> Analysing resumes…</>
+              ) : (
+                <>✨ {analysed ? 'Re-run AI Analysis' : 'Run AI Analysis'}</>
+              )}
+            </button>
+          </div>
+        )}
+        {analysed && (
+          <div className="col-auto">
+            <span className="text-muted" style={{ fontSize: 13 }}>Candidates ranked by AI match score</span>
+          </div>
+        )}
       </div>
 
-      {selectedVacancyId && applications.length > 0 && (
-        <div className="mb-3 d-flex align-items-center gap-3">
-          <button
-            className="btn btn-outline-primary d-flex align-items-center gap-2"
-            onClick={handleRunAiAnalysis}
-            disabled={analysing}
-          >
-            {analysing ? (
-              <><span className="spinner-border spinner-border-sm" /> Analysing resumes…</>
-            ) : (
-              <>✨ {analysed ? 'Re-run AI Analysis' : 'Run AI Analysis'}</>
-            )}
-          </button>
-          {analysed && (
-            <span className="text-muted" style={{ fontSize: 13 }}>
-              Candidates ranked by AI match score
-            </span>
-          )}
+      {loading ? (
+        <div className="text-center py-5">
+          <div className="spinner-border text-primary" />
         </div>
-      )}
-
-      {selectedVacancyId && (
+      ) : applications.length === 0 ? (
+        <p className="text-muted">No applications found.</p>
+      ) : (
         <div style={{ overflowX: 'auto' }}>
           <table className="table table-bordered table-hover">
             <thead className="table-dark">
               <tr>
+                {!filterVacancyId && <th>Vacancy</th>}
                 <th>Candidate Name</th>
                 <th>Applied Date</th>
                 {hasAnyScore && <th>AI Score</th>}
@@ -203,6 +220,9 @@ function ApplicationsPage() {
                     key={app.applicationId}
                     style={isTerminal ? { opacity: 0.5, background: '#f3f4f6', color: '#9ca3af', pointerEvents: 'none' } : {}}
                   >
+                    {!filterVacancyId && (
+                      <td style={{ fontSize: 13 }}>{app.vacancyDesignation} — {app.vacancyLocation}</td>
+                    )}
                     <td>
                       {app.candidateName}
                       {isTerminal && (

@@ -88,8 +88,8 @@ export default function CandidateNotificationsPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f4f6fb' }}>
-      <nav className="navbar navbar-expand-lg navbar-dark bg-dark px-4">
-        <span className="navbar-brand recpro-brand" style={{ color: '#fff', fontSize: '1.3rem' }}>RecPro</span>
+      <nav className="navbar navbar-expand-lg navbar-dark px-4" style={{ backgroundColor: '#0f172a' }}>
+        <span className="navbar-brand fw-bold" style={{ color: '#60a5fa', fontSize: '1.3rem', letterSpacing: '-0.5px' }}>RecPro</span>
         <div className="navbar-nav ms-auto d-flex flex-row align-items-center">
           <button className="btn btn-link nav-link text-white" onClick={() => navigate('/candidate/dashboard')}>Dashboard</button>
           <button className="btn btn-link nav-link text-white" onClick={() => navigate('/candidate/profile')}>Profile</button>
