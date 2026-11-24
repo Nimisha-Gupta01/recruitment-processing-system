@@ -284,7 +284,7 @@ export default function LandingPage() {
                       title="Report this employer"
                       onClick={() => setReportModal(v)}
                     >
-                      🚩
+                      Report
                     </button>
                   )}
                 </div>

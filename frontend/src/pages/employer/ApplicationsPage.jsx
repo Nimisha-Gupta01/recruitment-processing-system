@@ -283,7 +283,7 @@ function ApplicationsPage() {
                         title="Report this candidate"
                         onClick={() => { setReportApp(app); setReportReason(''); setReportMsg({ text: '', type: '' }); }}
                       >
-                        🚩
+                        Report
                       </button>
                     </td>
                   </tr>
