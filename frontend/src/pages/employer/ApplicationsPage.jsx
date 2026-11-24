@@ -4,6 +4,36 @@ import api from '../../api/axios';
 const APPLICATION_STATUSES = ['Applied', 'Shortlisted', 'Interview Scheduled', 'Interview Completed', 'Selected', 'Rejected', 'Withdrawn'];
 const INTERVIEW_MODES = ['Online', 'In-Person', 'Telephonic'];
 
+const CANDIDATE_ISSUE_CATEGORIES = [
+  'No-show for interview',
+  'Fake credentials',
+  'Unprofessional behavior',
+  'Provided false information',
+  'Unresponsive after selection',
+  'Other',
+];
+const STAR_LABELS = ['', 'Very Poor', 'Poor', 'Average', 'Good', 'Excellent'];
+
+function StarRating({ value, onChange }) {
+  const [hovered, setHovered] = useState(0);
+  return (
+    <div className="d-flex align-items-center gap-1">
+      {[1, 2, 3, 4, 5].map(star => (
+        <span
+          key={star}
+          style={{ fontSize: 32, cursor: 'pointer', color: star <= (hovered || value) ? '#f59e0b' : '#d1d5db', transition: 'color 0.1s', lineHeight: 1, userSelect: 'none' }}
+          onMouseEnter={() => setHovered(star)}
+          onMouseLeave={() => setHovered(0)}
+          onClick={() => onChange(star)}
+        >★</span>
+      ))}
+      {(hovered || value) > 0 && (
+        <span className="ms-2 text-muted" style={{ fontSize: 13 }}>{STAR_LABELS[hovered || value]}</span>
+      )}
+    </div>
+  );
+}
+
 function ScoreBadge({ score }) {
   if (score == null) return null;
   const color = score >= 80 ? '#198754' : score >= 60 ? '#fd7e14' : '#dc3545';
@@ -42,8 +72,11 @@ function ApplicationsPage() {
   const [analysed, setAnalysed] = useState(false);
   const [aiModalApp, setAiModalApp] = useState(null);
   const [reportApp, setReportApp] = useState(null);
-  const [reportReason, setReportReason] = useState('');
+  const [reportRating, setReportRating] = useState(0);
+  const [reportCategory, setReportCategory] = useState('');
+  const [reportDetails, setReportDetails] = useState('');
   const [reportMsg, setReportMsg] = useState({ text: '', type: '' });
+  const [reportSubmitting, setReportSubmitting] = useState(false);
 
   async function loadAll() {
     setLoading(true);
@@ -135,15 +168,18 @@ function ApplicationsPage() {
   }
 
   async function handleReportCandidate() {
-    if (!reportReason.trim()) return;
+    if (!reportRating || !reportCategory || reportDetails.trim().length < 10) return;
+    setReportSubmitting(true);
+    const reason = `[Rating: ${reportRating}/5] [Issue: ${reportCategory}] ${reportDetails.trim()}`;
     try {
-      await api.post(`/reports/candidate/${reportApp.candidateId}`, { reason: reportReason });
-      setReportMsg({ text: 'Report submitted.', type: 'success' });
-      setReportReason('');
-      setTimeout(() => { setReportApp(null); setReportMsg({ text: '', type: '' }); }, 2000);
+      await api.post(`/reports/candidate/${reportApp.candidateId}`, { reason });
+      setReportMsg({ text: 'Report submitted. Admin will review it.', type: 'success' });
+      setTimeout(() => { setReportApp(null); setReportMsg({ text: '', type: '' }); }, 2500);
     } catch (err) {
       const raw = err.response?.data?.message || err.response?.data || 'Failed';
       setReportMsg({ text: typeof raw === 'string' ? raw : 'Failed to submit report', type: 'danger' });
+    } finally {
+      setReportSubmitting(false);
     }
   }
 
@@ -281,7 +317,7 @@ function ApplicationsPage() {
                       <button
                         className="btn btn-sm btn-outline-secondary"
                         title="Report this candidate"
-                        onClick={() => { setReportApp(app); setReportReason(''); setReportMsg({ text: '', type: '' }); }}
+                        onClick={() => { setReportApp(app); setReportRating(0); setReportCategory(''); setReportDetails(''); setReportMsg({ text: '', type: '' }); }}
                       >
                         Report
                       </button>
@@ -358,27 +394,44 @@ function ApplicationsPage() {
       )}
       {reportApp && (
         <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog">
+          <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Report Candidate — {reportApp.candidateName}</h5>
+              <div className="modal-header border-0 pb-0">
+                <div>
+                  <h5 className="modal-title fw-bold mb-0">Report Candidate</h5>
+                  <p className="text-muted small mb-0">{reportApp.candidateName}</p>
+                </div>
                 <button className="btn-close" onClick={() => setReportApp(null)} />
               </div>
-              <div className="modal-body">
-                {reportMsg.text && <div className={`alert alert-${reportMsg.type}`}>{reportMsg.text}</div>}
-                <label className="form-label">Reason for reporting</label>
-                <textarea
-                  className="form-control"
-                  rows={4}
-                  placeholder="Describe why you are reporting this candidate..."
-                  value={reportReason}
-                  onChange={e => setReportReason(e.target.value)}
-                />
+              <div className="modal-body pt-3">
+                {reportMsg.text && <div className={`alert alert-${reportMsg.type} mb-3`}>{reportMsg.text}</div>}
+                <div className="mb-4">
+                  <label className="form-label fw-semibold mb-2">Overall Rating of this Candidate</label>
+                  <StarRating value={reportRating} onChange={setReportRating} />
+                  <div className="text-muted mt-1" style={{ fontSize: 12 }}>Rate the candidate's conduct (1 = very poor, 5 = excellent)</div>
+                </div>
+                <div className="mb-4">
+                  <label className="form-label fw-semibold">Issue Category</label>
+                  <div className="d-flex flex-wrap gap-2 mt-1">
+                    {CANDIDATE_ISSUE_CATEGORIES.map(cat => (
+                      <button key={cat} type="button" className="btn btn-sm"
+                        style={{ borderRadius: 20, border: `1.5px solid ${reportCategory === cat ? '#dc3545' : '#dee2e6'}`, background: reportCategory === cat ? '#dc354520' : '#fff', color: reportCategory === cat ? '#dc3545' : '#495057', fontWeight: reportCategory === cat ? 600 : 400, fontSize: 13 }}
+                        onClick={() => setReportCategory(cat)}
+                      >{cat}</button>
+                    ))}
+                  </div>
+                </div>
+                <div className="mb-2">
+                  <label className="form-label fw-semibold">Details <span className="text-muted fw-normal ms-1" style={{ fontSize: 12 }}>(min. 10 characters)</span></label>
+                  <textarea className="form-control" rows={4} placeholder="Describe the issue in detail. Your report is confidential." value={reportDetails} onChange={e => setReportDetails(e.target.value)} style={{ resize: 'none', fontSize: 14 }} />
+                  <div className="text-end text-muted mt-1" style={{ fontSize: 11 }}>{reportDetails.length} chars</div>
+                </div>
               </div>
-              <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => setReportApp(null)}>Cancel</button>
-                <button className="btn btn-danger" onClick={handleReportCandidate} disabled={!reportReason.trim()}>
-                  Submit Report
+              <div className="modal-footer border-0 pt-0">
+                <button className="btn btn-outline-secondary" onClick={() => setReportApp(null)}>Cancel</button>
+                <button className="btn btn-danger" onClick={handleReportCandidate}
+                  disabled={!reportRating || !reportCategory || reportDetails.trim().length < 10 || reportSubmitting}>
+                  {reportSubmitting ? <><span className="spinner-border spinner-border-sm me-1" />Submitting…</> : 'Submit Report'}
                 </button>
               </div>
             </div>
