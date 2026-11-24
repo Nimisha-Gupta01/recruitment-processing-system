@@ -386,7 +386,7 @@ export default function LandingPage() {
                   {isLoggedInCandidate && (
                     <button
                       className="btn btn-outline-danger btn-sm"
-                      title="Report this employer"
+                      title="Report this vacancy"
                       onClick={() => setReportModal(v)}
                     >
                       Report
@@ -419,6 +419,7 @@ export default function LandingPage() {
           onClose={() => setReportModal(null)}
         />
       )}
+
     </>
   )
 }
