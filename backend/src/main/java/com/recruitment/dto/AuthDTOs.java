@@ -139,6 +139,7 @@ public class AuthDTOs {
         private String role;
         private Integer userId;
         private String name;
+        private String orgName;
 
         public AuthResponse(String token, String role, Integer userId, String name) {
             this.token = token;
@@ -147,14 +148,22 @@ public class AuthDTOs {
             this.name = name;
         }
 
+        public AuthResponse(String token, String role, Integer userId, String name, String orgName) {
+            this.token = token;
+            this.role = role;
+            this.userId = userId;
+            this.name = name;
+            this.orgName = orgName;
+        }
+
         public String getToken() { return token; }
         public String getRole() { return role; }
         public Integer getUserId() { return userId; }
         public String getName() { return name; }
+        public String getOrgName() { return orgName; }
 
-        // Returns a copy without the token (safe to send to frontend)
         public AuthResponse withoutToken() {
-            return new AuthResponse(null, this.role, this.userId, this.name);
+            return new AuthResponse(null, this.role, this.userId, this.name, this.orgName);
         }
     }
 }

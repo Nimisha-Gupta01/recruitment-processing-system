@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
 
-const APPLICATION_STATUSES = ['Applied', 'Shortlisted', 'Interview Scheduled', 'Interview Completed', 'Selected', 'Rejected', 'Withdrawn'];
+const APPLICATION_STATUSES = ['Applied', 'Shortlisted', 'Interview Scheduled', 'Interview Completed', 'Selected', 'Offered', 'Recruited', 'Rejected', 'Withdrawn'];
 const INTERVIEW_MODES = ['Online', 'In-Person', 'Telephonic'];
 
 function ScoreBadge({ score }) {
@@ -197,7 +197,7 @@ function ApplicationsPage() {
             </thead>
             <tbody>
               {applications.map(app => {
-                const isTerminal = ['Withdrawn', 'Rejected', 'Selected'].includes(app.status);
+                const isTerminal = ['Withdrawn', 'Rejected', 'Recruited'].includes(app.status);
                 return (
                   <tr
                     key={app.applicationId}

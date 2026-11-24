@@ -83,7 +83,7 @@ public class AuthService {
                 throw new IllegalArgumentException("Account pending admin approval");
             }
             String token = jwtUtil.generateToken(employer.getEmail(), "EMPLOYER", employer.getEmployerId());
-            return new AuthResponse(token, "EMPLOYER", employer.getEmployerId(), employer.getContactName());
+            return new AuthResponse(token, "EMPLOYER", employer.getEmployerId(), employer.getContactName(), employer.getOrgName());
         } else if ("ADMIN".equals(req.getRole())) {
             Candidate admin = candidateRepo.findByEmail(req.getEmail())
                     .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));

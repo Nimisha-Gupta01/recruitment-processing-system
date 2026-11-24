@@ -14,6 +14,8 @@ import ApplicationsPage from './pages/employer/ApplicationsPage.jsx'
 import InterviewsPage from './pages/employer/InterviewsPage.jsx'
 import CandidateSearchPage from './pages/employer/CandidateSearchPage.jsx'
 import EmployerNotificationsPage from './pages/employer/EmployerNotificationsPage.jsx'
+import CandidateReportPage from './pages/candidate/CandidateReportPage.jsx'
+import EmployerReportPage from './pages/employer/EmployerReportPage.jsx'
 import AdminLoginPage from './pages/admin/AdminLoginPage.jsx'
 import AdminDashboard from './pages/admin/AdminDashboard.jsx'
 
@@ -68,6 +70,12 @@ export default function App() {
         } />
         <Route path="/candidate/notifications" element={
           <ProtectedRoute role="CANDIDATE"><CandidateNotificationsPage /></ProtectedRoute>
+        } />
+        <Route path="/candidate/report" element={
+          <ProtectedRoute role="CANDIDATE"><CandidateReportPage /></ProtectedRoute>
+        } />
+        <Route path="/employer/report" element={
+          <ProtectedRoute role="EMPLOYER"><EmployerReportPage /></ProtectedRoute>
         } />
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route path="/admin/dashboard" element={

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FaSearch, FaFileAlt, FaUserCircle, FaBell } from 'react-icons/fa'
+import { FaSearch, FaFileAlt, FaUserCircle, FaBell, FaChartBar } from 'react-icons/fa'
 import api from '../../api/axios.js'
 
 export default function CandidateDashboard() {
@@ -45,6 +45,12 @@ export default function CandidateDashboard() {
       path: '/candidate/notifications',
       badge: notifCount,
     },
+    {
+      icon: <FaChartBar size={36} color="#e11d48" />,
+      label: 'My Report',
+      description: 'View & print your application report',
+      path: '/candidate/report',
+    },
   ]
 
   return (
@@ -53,6 +59,8 @@ export default function CandidateDashboard() {
         <span className="navbar-brand recpro-brand" style={{ color: '#fff', fontSize: '1.3rem' }}>RecPro</span>
         <div className="navbar-nav ms-auto d-flex flex-row align-items-center">
           <button className="btn btn-link nav-link text-white" onClick={() => navigate('/candidate/profile')}>Profile</button>
+          <button className="btn btn-link nav-link text-white" onClick={() => navigate('/candidate/applications')}>My Applications</button>
+          <button className="btn btn-link nav-link text-white" onClick={() => navigate('/candidate/report')}>Report</button>
           <button className="btn btn-link nav-link text-white position-relative me-2" onClick={() => navigate('/candidate/notifications')}>
             <FaBell size={18} />
             {notifCount > 0 && (
@@ -71,7 +79,7 @@ export default function CandidateDashboard() {
 
         <div className="row g-4 mb-4">
           {quickActions.map(action => (
-            <div className="col-md-3" key={action.label}>
+            <div className="col-md-4 col-lg" key={action.label}>
               <div
                 className="card recpro-card text-center p-4 h-100 position-relative"
                 style={{ cursor: 'pointer' }}

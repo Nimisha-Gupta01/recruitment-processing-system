@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaBriefcase, FaUsers, FaCalendarCheck, FaSearch, FaBell } from 'react-icons/fa';
+import { FaBriefcase, FaUsers, FaCalendarCheck, FaSearch, FaBell, FaChartBar } from 'react-icons/fa';
 import api from '../../api/axios.js';
 
 function EmployerDashboard() {
@@ -40,6 +40,11 @@ function EmployerDashboard() {
       label: 'Find Candidates',
       path: '/employer/search',
     },
+    {
+      icon: <FaChartBar size={36} color="#e11d48" />,
+      label: 'Recruitment Report',
+      path: '/employer/report',
+    },
   ];
 
   return (
@@ -51,6 +56,7 @@ function EmployerDashboard() {
           <button className="btn btn-link nav-link text-white" onClick={() => navigate('/employer/applications')}>Applications</button>
           <button className="btn btn-link nav-link text-white" onClick={() => navigate('/employer/interviews')}>Interviews</button>
           <button className="btn btn-link nav-link text-white" onClick={() => navigate('/employer/search')}>Search Candidates</button>
+          <button className="btn btn-link nav-link text-white" onClick={() => navigate('/employer/report')}>Report</button>
           <button className="btn btn-link nav-link text-white position-relative me-2" onClick={() => navigate('/employer/notifications')}>
             <FaBell size={18} />
             {notifCount > 0 && (
@@ -68,7 +74,7 @@ function EmployerDashboard() {
 
         <div className="row g-4 mb-4">
           {quickActions.map(action => (
-            <div className="col-md-3" key={action.label}>
+            <div className="col-md-4 col-lg" key={action.label}>
               <div
                 className="card recpro-card text-center p-4 h-100"
                 style={{ cursor: 'pointer' }}

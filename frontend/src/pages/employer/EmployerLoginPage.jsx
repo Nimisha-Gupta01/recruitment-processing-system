@@ -22,6 +22,7 @@ export default function EmployerLoginPage() {
       localStorage.setItem('role', data.role)
       localStorage.setItem('userId', data.userId)
       localStorage.setItem('name', data.name)
+      if (data.orgName) localStorage.setItem('orgName', data.orgName)
       navigate('/employer/dashboard')
     } catch (err) {
       const raw = err.response?.data?.message || err.response?.data || 'Invalid credentials'

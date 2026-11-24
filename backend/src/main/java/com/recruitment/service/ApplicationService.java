@@ -133,7 +133,13 @@ public class ApplicationService {
             body = "Dear " + candidateName + ", congratulations! You have been shortlisted for " + vacancyTitle + ".";
         } else if ("Selected".equals(newStatus)) {
             subject = "Selected! — " + vacancyTitle;
-            body = "Dear " + candidateName + ", congratulations! You have been selected for " + vacancyTitle + ".";
+            body = "Dear " + candidateName + ", congratulations! You have been selected for " + vacancyTitle + ". The employer will reach out with next steps.";
+        } else if ("Offered".equals(newStatus)) {
+            subject = "Offer Extended — " + vacancyTitle;
+            body = "Dear " + candidateName + ", congratulations! An offer has been extended to you for the position of " + vacancyTitle + ". Please check with the employer for offer details.";
+        } else if ("Recruited".equals(newStatus)) {
+            subject = "Welcome Aboard! — " + vacancyTitle;
+            body = "Dear " + candidateName + ", congratulations and welcome! You have been successfully recruited for " + vacancyTitle + ". We wish you great success in your new role.";
         }
 
         notificationService.notify(candidateEmail, "Candidate", subject, body, "STATUS_CHANGED");
