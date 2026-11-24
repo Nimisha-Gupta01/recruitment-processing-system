@@ -44,8 +44,8 @@ function CandidateNavbar() {
   const navigate = useNavigate()
   function logout() { localStorage.clear(); navigate('/') }
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark px-4">
-      <span className="navbar-brand"><span className="recpro-brand" style={{ color: '#fff' }}>RecPro</span></span>
+    <nav className="navbar navbar-expand-lg navbar-dark px-4" style={{ backgroundColor: '#0f172a' }}>
+      <span className="navbar-brand fw-bold" style={{ color: '#60a5fa', letterSpacing: '-0.5px' }}>RecPro</span>
       <div className="navbar-nav ms-auto d-flex flex-row gap-3">
         <button className="btn btn-link text-white text-decoration-none" onClick={() => navigate('/candidate/profile')}>Profile</button>
         <button className="btn btn-link text-white text-decoration-none" onClick={() => navigate('/candidate/jobs')}>Job Search</button>
@@ -399,11 +399,15 @@ function ApplicationCard({ application, interview, onWithdraw }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+const STATUS_OPTIONS = ['All', 'Applied', 'Shortlisted', 'Interview Scheduled', 'Interview Completed', 'Selected', 'Rejected', 'Withdrawn']
+
 export default function MyApplicationsPage() {
   const [applications, setApplications] = useState([])
   const [interviews, setInterviews] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('All')
 
   function loadAll() {
     setLoading(true)
@@ -424,11 +428,55 @@ export default function MyApplicationsPage() {
     loadAll()
   }, [])
 
+  const filtered = applications.filter(app => {
+    const matchesSearch =
+      search.trim() === '' ||
+      app.vacancyTitle?.toLowerCase().includes(search.toLowerCase()) ||
+      app.employerOrgName?.toLowerCase().includes(search.toLowerCase())
+    const matchesStatus = statusFilter === 'All' || app.status === statusFilter
+    return matchesSearch && matchesStatus
+  })
+
   return (
     <>
       <CandidateNavbar />
       <div className="container mt-4" style={{ maxWidth: 860 }}>
-        <h4 className="mb-4 fw-bold">My Applications</h4>
+        <h4 className="mb-3 fw-bold">My Applications</h4>
+
+        {/* Search & filter row */}
+        {!loading && !error && applications.length > 0 && (
+          <div className="row g-2 mb-4">
+            <div className="col-md-6">
+              <input
+                className="form-control"
+                placeholder="Search by job title or company…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+            <div className="col-md-4">
+              <select
+                className="form-select"
+                value={statusFilter}
+                onChange={e => setStatusFilter(e.target.value)}
+              >
+                {STATUS_OPTIONS.map(s => (
+                  <option key={s} value={s}>{s === 'All' ? 'All Statuses' : s}</option>
+                ))}
+              </select>
+            </div>
+            {(search || statusFilter !== 'All') && (
+              <div className="col-md-2 d-flex align-items-center">
+                <button
+                  className="btn btn-sm btn-outline-secondary w-100"
+                  onClick={() => { setSearch(''); setStatusFilter('All') }}
+                >
+                  Clear
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {loading && (
           <div className="text-center py-5">
@@ -449,7 +497,13 @@ export default function MyApplicationsPage() {
           </div>
         )}
 
-        {!loading && !error && applications.length > 0 && applications.map(app => (
+        {!loading && !error && applications.length > 0 && filtered.length === 0 && (
+          <div className="text-center py-5">
+            <p className="text-muted">No applications match your search.</p>
+          </div>
+        )}
+
+        {!loading && !error && filtered.map(app => (
           <ApplicationCard
             key={app.applicationId}
             application={app}

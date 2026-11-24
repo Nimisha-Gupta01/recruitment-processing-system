@@ -30,15 +30,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="d-flex flex-column justify-content-center align-items-center vh-100">
+    <div className="d-flex flex-column justify-content-center align-items-center vh-100" style={{ backgroundColor: '#0f172a' }}>
       <div className="mb-4 text-center">
-        <FaBriefcase size={32} color="#2563eb" className="mb-2" />
-        <div className="recpro-brand" style={{ fontSize: '2rem' }}>RecPro</div>
-        <div className="text-muted" style={{ fontSize: '0.9rem' }}>Your career, simplified.</div>
+        <FaBriefcase size={32} color="#60a5fa" className="mb-2" />
+        <div style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.5px', color: '#fff' }}>RecPro</div>
+        <div style={{ fontSize: '0.9rem', color: '#94a3b8' }}>Your career, simplified.</div>
       </div>
-      <div className="card recpro-card p-4" style={{ width: '400px' }}>
+      <div className="card shadow p-4" style={{ width: '400px', borderRadius: 12 }}>
         <h5 className="card-title mb-4 text-center fw-semibold">Candidate Login</h5>
-        {error && <div className="alert alert-danger">{error}</div>}
+        {error && <div className="alert alert-danger py-2">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
             <label className="form-label">Email</label>
@@ -51,6 +51,7 @@ export default function LoginPage() {
                 value={form.email}
                 onChange={handleChange}
                 required
+                autoFocus
               />
             </div>
           </div>
@@ -76,9 +77,9 @@ export default function LoginPage() {
               </button>
             </div>
           </div>
-          <button type="submit" className="btn btn-primary w-100">Login</button>
+          <button type="submit" className="btn btn-dark w-100">Login</button>
         </form>
-        <p className="text-center mt-3">
+        <p className="text-center mt-3 small">
           Don&apos;t have an account? <Link to="/register">Register</Link>
         </p>
         <hr />
