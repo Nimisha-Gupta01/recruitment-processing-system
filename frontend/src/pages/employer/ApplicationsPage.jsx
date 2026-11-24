@@ -306,6 +306,16 @@ function ApplicationsPage() {
                       >
                         Schedule Interview
                       </button>
+                      {app.resumePath && (
+                        <a
+                          href={`http://localhost:8080/api/resumes/${app.resumePath}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-sm btn-outline-success me-2"
+                        >
+                          View Resume
+                        </a>
+                      )}
                       {!isTerminal && (
                         <button
                           className="btn btn-sm btn-outline-danger me-2"
