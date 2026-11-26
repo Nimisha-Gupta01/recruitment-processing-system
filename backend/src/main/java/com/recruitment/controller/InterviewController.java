@@ -23,7 +23,7 @@ public class InterviewController {
     public InterviewController(InterviewService interviewService) {
         this.interviewService = interviewService;
     }
-
+//schedule interview
     @PostMapping("/employer/interviews")
     @ResponseStatus(HttpStatus.CREATED)
     public InterviewResponse schedule(@AuthenticationPrincipal String employerEmail,
@@ -33,7 +33,7 @@ public class InterviewController {
         log.info("Interview id={} scheduled for application id={}", res.getInterviewId(), req.getApplicationId());
         return res;
     }
-
+//updatedOutcome
     @PatchMapping("/employer/interviews/{id}/outcome")
     public InterviewResponse updateOutcome(@AuthenticationPrincipal String employerEmail,
                                            @PathVariable Integer id,
@@ -41,16 +41,16 @@ public class InterviewController {
         log.info("Updating outcome for interview id={} to '{}' by employer: {}", id, req.getOutcome(), employerEmail);
         return interviewService.updateOutcome(employerEmail, id, req);
     }
-
+    //byApplication
     @GetMapping("/employer/interviews")
     public List<InterviewResponse> byApplication(@AuthenticationPrincipal String employerEmail,
                                                   @RequestParam Integer applicationId) {
         log.info("Fetching interviews for application id={} by employer: {}", applicationId, employerEmail);
         return interviewService.getByApplication(employerEmail, applicationId);
     }
-
+    //myinterviews
     @GetMapping("/candidate/interviews")
-    public List<InterviewResponse> myInterviews(@AuthenticationPrincipal String candidateEmail) {
+    public List<InterviewResponse> myInterviews(@AuthenticationPrincipal Sring candidateEmail) {
         log.info("Fetching interviews for candidate: {}", candidateEmail);
         return interviewService.getCandidateInterviews(candidateEmail);
     }

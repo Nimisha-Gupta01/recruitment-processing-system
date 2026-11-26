@@ -67,6 +67,7 @@ public class AuthService {
         if (req.getTotalExpYrs() != null) candidate.setTotalExpYrs(req.getTotalExpYrs());
         candidate.setExpectedSalMin(req.getExpectedSalMin());
         candidate.setExpectedSalMax(req.getExpectedSalMax());
+        //Saving to DB
         Candidate saved = candidateRepo.save(candidate);
         String token = jwtUtil.generateToken(saved.getEmail(), "CANDIDATE", saved.getCandidateId());
         return new AuthResponse(token, "CANDIDATE", saved.getCandidateId(), saved.getFullName());
