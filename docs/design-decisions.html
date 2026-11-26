@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RecPro — Design Decisions & Why-Not Analysis</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --border: #334155;
+    --accent: #60a5fa;
+    --accent2: #34d399;
+    --accent3: #f59e0b;
+    --accent4: #f87171;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --code-bg: #0d1117;
+    --pill-bg: #1e3a5f;
+    --pill-text: #93c5fd;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 15px; line-height: 1.7; }
+
+  /* NAV */
+  nav { position: sticky; top: 0; z-index: 100; background: #0a0f1e; border-bottom: 1px solid var(--border); padding: 12px 32px; display: flex; align-items: center; gap: 16px; }
+  nav .brand { font-size: 18px; font-weight: 800; color: var(--accent); letter-spacing: -0.5px; white-space: nowrap; }
+  nav .nav-links { display: flex; flex-wrap: wrap; gap: 6px 12px; }
+  nav .nav-links a { color: var(--muted); font-size: 13px; text-decoration: none; white-space: nowrap; transition: color 0.15s; }
+  nav .nav-links a:hover { color: var(--accent); }
+
+  /* LAYOUT */
+  .page { max-width: 1000px; margin: 0 auto; padding: 48px 24px 80px; }
+
+  /* HERO */
+  .hero { text-align: center; padding: 48px 0 40px; }
+  .hero h1 { font-size: 2.4rem; font-weight: 900; color: #fff; letter-spacing: -1px; }
+  .hero h1 span { color: var(--accent); }
+  .hero p { color: var(--muted); margin-top: 10px; max-width: 600px; margin-left: auto; margin-right: auto; }
+  .hero .meta { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; margin-top: 16px; }
+  .pill { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; background: var(--pill-bg); color: var(--pill-text); border: 1px solid #1d4ed8; }
+
+  /* SECTION */
+  section { margin-bottom: 48px; }
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+  h2 { font-size: 1.5rem; font-weight: 800; color: #fff; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.1rem; font-weight: 700; color: var(--accent); margin: 24px 0 10px; }
+
+  /* DECISION CARD */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+  .card-header { padding: 14px 20px; background: #1a2744; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .card-header .icon { font-size: 20px; }
+  .card-header .title { font-weight: 700; color: #fff; font-size: 15px; }
+  .card-header .file-ref { font-size: 11px; color: var(--muted); margin-left: auto; font-family: monospace; white-space: nowrap; }
+  .card-body { padding: 18px 20px; }
+
+  /* WHY / WHY NOT GRID */
+  .why-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 12px; }
+  @media (max-width: 600px) { .why-grid { grid-template-columns: 1fr; } }
+  .why-box { border-radius: 8px; padding: 14px 16px; }
+  .why-yes { background: #052e16; border: 1px solid #166534; }
+  .why-no  { background: #1c1917; border: 1px solid #44403c; }
+  .why-box .label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
+  .why-yes .label { color: var(--accent2); }
+  .why-no  .label { color: #a8a29e; }
+  .why-box p { font-size: 13.5px; color: var(--text); line-height: 1.6; }
+  .why-box ul { font-size: 13.5px; color: var(--text); line-height: 1.6; padding-left: 18px; }
+
+  /* HOW / WHERE */
+  .hw-block { background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-top: 12px; }
+  .hw-block .hw-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .hw-block p { font-size: 13.5px; color: var(--text); line-height: 1.6; }
+  .hw-block ul { font-size: 13.5px; color: var(--text); line-height: 1.6; padding-left: 18px; }
+
+  code { background: var(--code-bg); color: #7dd3fc; padding: 1px 6px; border-radius: 4px; font-size: 12.5px; font-family: 'Cascadia Code','Fira Code',monospace; border: 1px solid #1e3a5f; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; overflow-x: auto; margin: 10px 0; font-size: 12.5px; font-family: 'Cascadia Code','Fira Code',monospace; color: #e2e8f0; line-height: 1.5; }
+
+  /* FLOW DIAGRAM */
+  .flow { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+  .flow .step { background: var(--pill-bg); color: var(--pill-text); border-radius: 6px; padding: 5px 12px; font-size: 13px; font-weight: 600; border: 1px solid #1d4ed8; }
+  .flow .arrow { color: var(--muted); font-size: 16px; }
+  .flow .step.red { background: #450a0a; color: #fca5a5; border-color: #991b1b; }
+  .flow .step.green { background: #052e16; color: #6ee7b7; border-color: #166534; }
+  .flow .step.amber { background: #1c0d00; color: #fcd34d; border-color: #92400e; }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13.5px; }
+  th { background: #1a2744; color: var(--accent); font-weight: 700; padding: 9px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+  td { padding: 9px 14px; border-bottom: 1px solid #1e293b; color: var(--text); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td:first-child { font-weight: 600; white-space: nowrap; }
+  .check { color: var(--accent2); }
+  .cross { color: var(--accent4); }
+
+  p { margin-bottom: 8px; }
+  ul { margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand">RecPro</div>
+  <div class="nav-links">
+    <a href="#security">JWT Auth</a>
+    <a href="#passwords">BCrypt</a>
+    <a href="#cookies">Cookies</a>
+    <a href="#lombok">No Lombok</a>
+    <a href="#di">Dependency Injection</a>
+    <a href="#enums">DB Enums</a>
+    <a href="#exceptions">Exceptions</a>
+    <a href="#jpa">JPA / Hibernate</a>
+    <a href="#notifications">Notifications</a>
+    <a href="#ai">AI Analysis</a>
+    <a href="#scheduler">Scheduler</a>
+    <a href="#swagger">OpenAPI</a>
+    <a href="#frontend">Frontend</a>
+    <a href="#routing">Client Routing</a>
+    <a href="#axios">Axios</a>
+    <a href="#state">State Management</a>
+    <a href="#css">CSS Framework</a>
+    <a href="#reports">Reports</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <div class="hero">
+    <h1>RecPro — <span>Design Decisions</span></h1>
+    <p>A thorough why / why-not analysis of every major architectural and implementation choice in the system — backend and frontend.</p>
+    <div class="meta">
+      <span class="pill">Spring Boot 3.3.4</span>
+      <span class="pill">Java 21</span>
+      <span class="pill">MySQL 8.0</span>
+      <span class="pill">React 18 (Vite)</span>
+      <span class="pill">JJWT 0.12.6</span>
+      <span class="pill">Bootstrap 5</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ SECURITY ═══════════════ -->
+  <section id="security">
+    <div class="section-label">Backend · Security</div>
+    <h2>1. JWT Authentication</h2>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">🔑</span>
+        <span class="title">Why JWT (JSON Web Tokens)?</span>
+        <span class="file-ref">JwtUtil.java · JwtAuthFilter.java · AuthController.java</span>
+      </div>
+      <div class="card-body">
+        <p>The system serves three distinct user roles — <strong>Candidate</strong>, <strong>Employer</strong>, and <strong>Admin</strong> — from a single API. After login, every subsequent request must carry proof of who the user is and what role they hold. JWT solves this without the server needing to remember anything.</p>
+        <div class="why-grid">
+          <div class="why-box why-yes">
+            <div class="label">✅ Why JWT</div>
+            <ul>
+              <li><strong>Stateless</strong> — the server holds no session table. Any node can validate a request independently.</li>
+              <li><strong>Self-contained</strong> — the token carries <code>email</code>, <code>role</code>, and <code>userId</code> as claims; no DB lookup needed to know who is calling.</li>
+              <li><strong>Role enforcement is trivial</strong> — Spring Security reads the <code>role</code> claim and maps it to <code>ROLE_CANDIDATE / ROLE_EMPLOYER</code> automatically.</li>
+              <li><strong>Works with CORS</strong> — the React dev server on port 5173 and the Spring server on 8080 share only the cookie; no CSRF issue because <code>SameSite</code> semantics apply.</li>
+            </ul>
+          </div>
+          <div class="why-box why-no">
+            <div class="label">❌ Why not Session-based auth</div>
+            <ul>
+              <li>Sessions require server-side storage (memory / Redis). Adds infrastructure.</li>
+              <li>Horizontal scaling becomes harder — session affinity or a shared store is needed.</li>
+              <li>Not REST-idiomatic; HttpSession is an artifact of server-rendered web apps.</li>
+              <li>Spring Security's <code>SessionCreationPolicy.STATELESS</code> is set explicitly to avoid accidental session creation.</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3>How it is implemented</h3>
+        <div class="hw-block">
+          <div class="hw-label">Token generation — JwtUtil.java</div>
+          <pre>Jwts.builder()
+  .subject(email)         // used as @AuthenticationPrincipal in controllers
+  .claim("role", role)    // CANDIDATE | EMPLOYER | ADMIN
+  .claim("userId", userId)
+  .expiration(new Date(now + expirationMs))   // 24 h default
+  .signWith(Keys.hmacShaKeyFor(secret.getBytes(UTF_8)))
+  .compact()</pre>
+          <p>HMAC-SHA256 signing with a secret injected from <code>app.jwt.secret</code> (environment variable in production).</p>
+        </div>
+        <div class="hw-block" style="margin-top:10px">
+          <div class="hw-label">Token validation — JwtAuthFilter.java (runs on every request)</div>
+          <div class="flow">
+            <div class="step">Read cookie "jwt"</div>
+            <div class="arrow">→</div>
+            <div class="step">Fallback: Authorization header</div>
+            <div class="arrow">→</div>
+            <div class="step green">isTokenValid?</div>
+            <div class="arrow">→</div>
+            <div class="step">Set SecurityContext</div>
+          </div>
+          <p>The filter extends <code>OncePerRequestFilter</code> so it runs exactly once per request. If the token is absent or invalid, the security context is simply left empty; Spring Security's later rules reject the request with 401 or 403.</p>
+        </div>
+
+        <h3>Where the JWT lives — dual-channel token delivery</h3>
+        <div class="why-grid">
+          <div class="why-box why-yes">
+            <div class="label">✅ Primary: HttpOnly Cookie</div>
+            <p>Set by <code>AuthController.setJwtCookie()</code> on login/register. Browser attaches it automatically to every <code>withCredentials: true</code> request. JavaScript cannot read it, so XSS cannot steal it.</p>
+          </div>
+          <div class="why-box why-no">
+            <div class="label">↩ Fallback: Bearer header</div>
+            <p>Filter also checks <code>Authorization: Bearer &lt;token&gt;</code>. Used by curl tests, Postman, and the Swagger UI (which cannot set cookies). Not the production path.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ BCRYPT ═══════════════ -->
+  <section id="passwords">
+    <div class="section-label">Backend · Security</div>
+    <h2>2. Password Hashing with BCrypt</h2>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">🔒</span>
+        <span class="title">Why BCrypt over MD5 / SHA / plain text?</span>
+        <span class="file-ref">SecurityConfig.java · AuthService.java</span>
+      </div>
+      <div class="card-body">
+        <div class="why-grid">
+          <div class="why-box why-yes">
+            <div class="label">✅ Why BCrypt</div>
+            <ul>
+              <li><strong>Slow by design</strong> — the work factor (cost) makes brute-force attacks computationally expensive. MD5/SHA are fast, which is bad for password storage.</li>
+              <li><strong>Built-in salt</strong> — each hash is unique even for identical passwords. No rainbow table attack is possible.</li>
+              <li><strong>Spring-native</strong> — <code>BCryptPasswordEncoder</code> is the recommended <code>PasswordEncoder</code> and is wired as a <code>@Bean</code> in <code>SecurityConfig</code>.</li>
+            </ul>
+          </div>
+          <div class="why-box why-no">
+            <div class="label">❌ Why not SHA-256 / MD5</div>
+            <ul>
+              <li>They are <em>general-purpose</em> hash functions — fast to compute, so billions of guesses per second are possible with GPUs.</li>
+              <li>Without salting, identical passwords produce identical hashes, enabling pre-computed table attacks.</li>
+              <li>MD5 is broken for cryptographic purposes.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="hw-block" style="margin-top:14px">
+          <div class="hw-label">Usage pattern</div>
+          <pre>// Registration — hash and store
+candidate.setPasswordHash(passwordEncoder.encode(req.getPassword()));
+
+// Login — compare plaintext to stored hash
+if (!passwordEncoder.matches(req.getPassword(), candidate.getPasswordHash())) {
+    throw new IllegalArgumentException("Invalid credentials");
+}</pre>
+          <p>The raw password never touches the database. The field is named <code>passwordHash</code> in every entity to make the intent explicit.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ COOKIES ═══════════════ -->
+  <section id="cookies">
+    <div class="section-label">Backend · Security</div>
+    <h2>3. HttpOnly Cookie Strategy</h2>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">🍪</span>
+        <span class="title">Why store JWT in a cookie instead of localStorage?</span>
+        <span class="file-ref">AuthController.java · frontend/api/axios.js</span>
+      </div>
+      <div class="card-body">
+        <div class="why-grid">
+          <div class="why-box why-yes">
+            <div class="label">✅ Why HttpOnly Cookie</div>
+            <ul>
+              <li><strong>XSS-safe</strong> — <code>HttpOnly</code> means no JavaScript (including injected scripts) can call <code>document.cookie</code> to steal the token.</li>
+              <li><strong>Automatic attachment</strong> — with <code>withCredentials: true</code> in Axios, the browser sends the cookie with every request without any manual header management in React code.</li>
+              <li><strong>Logout is clean</strong> — overwriting the cookie with <code>MaxAge=0</code> in the logout endpoint instantly invalidates it on the client.</li>
+            </ul>
+          </div>
+          <div class="why-box why-no">
+            <div class="label">❌ Why not localStorage</div>
+            <ul>
+              <li>localStorage is readable by any JavaScript on the page. A single XSS vulnerability exposes the token.</li>
+              <li>Many security guidelines (OWASP) explicitly warn against storing JWTs in localStorage for sensitive applications.</li>
+              <li>Requires manual <code>Authorization</code> header injection in every API call.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="hw-block" style="margin-top:14px">
+          <div class="hw-label">What IS stored in localStorage (non-sensitive UI state only)</div>
+          <pre>localStorage.setItem('role', data.role)       // CANDIDATE / EMPLOYER / ADMIN
+localStorage.setItem('userId', data.userId)   // for display only
+localStorage.setItem('name', data.name)       // greeting in nav bar</pre>
+          <p>The actual JWT is in the cookie. localStorage only holds metadata needed to show the right dashboard UI without an extra API call.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ LOMBOK ═══════════════ -->
+  <section id="lombok">
+    <div class="section-label">Backend · Code Style</div>
+    <h2>4. No Lombok — Explicit Getters &amp; Setters</h2>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">📝</span>
+        <span class="title">Why write 50 lines of getters/setters instead of @Data?</span>
+        <span class="file-ref">All entity/*.java · dto/*.java</span>
+      </div>
+      <div class="card-body">
+        <p>Lombok is <em>in the pom.xml</em> (optional scope) but deliberately unused in the entity and DTO code. The choice is intentional.</p>
+        <div class="why-grid">
+          <div class="why-box why-yes">
+            <div class="label">✅ Why explicit getters/setters</div>
+            <ul>
+              <li><strong>Transparent to any IDE</strong> — no annotation processor needed. Compile, navigate, debug, refactor without plugin dependencies.</li>
+              <li><strong>Academic requirement</strong> — the assignment specification explicitly forbids Lombok to demonstrate understanding of Java encapsulation.</li>
+              <li><strong>Debuggability</strong> — you can set a breakpoint <em>inside</em> a setter to trace when a field changes. With <code>@Data</code> that code is generated and invisible.</li>
+              <li><strong>No surprises with Hibernate</strong> — Lombok's <code>@EqualsAndHashCode</code> on JPA entities causes well-known proxy issues. Explicit methods avoid this entirely.</li>
+            </ul>
+          </div>
+          <div class="why-box why-no">
+            <div class="label">❌ Why @Data / @Getter / @Setter would work too</div>
+            <ul>
+              <li>Reduces boilerplate by ~70% for large entity classes.</li>
+              <li>Industry standard in production Spring apps — well-understood by most Java developers.</li>
+              <li>Not used here because the assignment asked for demonstrating language fundamentals.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="hw-block" style="margin-top:14px">
+          <div class="hw-label">Pattern used consistently</div>
+          <pre>private String designation;
+
+public String getDesignation() { return designation; }
+public void setDesignation(String designation) { this.designation = designation; }</pre>
+          <p>All 8 entities and all DTOs follow this pattern. Single-line body form keeps the class readable.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ DI ═══════════════ -->
+  <section id="di">
+    <div class="section-label">Backend · Code Style</div>
+    <h2>5. Constructor Injection — No @Autowired Fields</h2>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">🏗️</span>
+        <span class="title">Why constructor injection instead of @Autowired on fields?</span>
+        <span class="file-ref">Every service and controller class</span>
+      </div>
+      <div class="card-body">
+        <div class="why-grid">
+          <div class="why-box why-yes">
+            <div class="label">✅ Why constructor injection</div>
+            <ul>
+              <li><strong>Immutability</strong> — dependencies are <code>final</code> and set once. No null-state between construction and injection.</li>
+              <li><strong>Testability</strong> — unit tests can pass mock objects directly in the constructor without a Spring context.</li>
+              <li><strong>Explicit dependencies</strong> — looking at the constructor immediately shows what the class needs.</li>
+              <li><strong>Spring best practice since 4.3</strong> — with a single constructor, <code>@Autowired</code> is not even needed.</li>
+            </ul>
+          </div>
+          <div class="why-box why-no">
+            <div class="label">❌ Why not @Autowired field injection</div>
+            <ul>
+              <li>Fields are injected via reflection, bypassing Java's visibility rules.</li>
+              <li>Class can be constructed in a "broken" state if the Spring container is bypassed.</li>
+              <li>IntelliJ, SonarLint, and Spring's own documentation flag it as a code smell.</li>
+              <li>Makes circular dependencies harder to detect at startup.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="hw-block" style="margin-top:14px">
+          <div class="hw-label">Pattern in every service</div>
+          <pre>@Service
+public class ApplicationService {
+    private final ApplicationRepository applicationRepository;
+    private final CandidateRepository candidateRepository;
+    // ...
+
+    public ApplicationService(ApplicationRepository applicationRepository,
+                               CandidateRepository candidateRepository, ...) {
+        this.applicationRepository = applicationRepository;
+        this.candidateRepository   = candidateRepository;
+        // ...
+    }
+}</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ ENUMS ═══════════════ -->
+  <section id="enums">
+    <div class="section-label">Backend · Database</div>
+    <h2>6. String Fields for DB-enum Columns (application status, interview mode)</h2>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">🗄️</span>
+        <span class="title">Why plain String instead of a Java enum for status columns?</span>
+        <span class="file-ref">Application.java · Interview.java</span>
+      </div>
+      <div class="card-body">
+        <p>The MySQL schema defines <code>status</code> on <code>applications</code> as <code>ENUM('Applied','Interview Scheduled','Interview Completed',...)</code>. These values contain spaces and hyphens. This creates a critical problem with Java enums.</p>
+        <div class="why-grid">
+          <div class="why-box why-yes">
+            <div class="label">✅ Why plain String + @Column(columnDefinition="ENUM(...)")</div>
+            <ul>
+              <li><strong>Exact match</strong> — Java stores and reads <code>"Interview Scheduled"</code> exactly as it appears in the MySQL enum definition.</li>
+              <li><strong>ddl-auto=validate passes</strong> — Hibernate compares the column definition at startup. A mismatch throws an error and prevents the app from starting.</li>
+              <li><strong>No mapping code</strong> — no <code>@Converter</code> or <code>toString()</code> override needed.</li>
+            </ul>
+          </div>
+          <div class="why-box why-no">
+            <div class="label">❌ Why not @Enumerated(EnumType.STRING)</div>
+            <ul>
+              <li>Java enum names cannot contain spaces. <code>INTERVIEW_SCHEDULED</code> does not equal <code>"Interview Scheduled"</code>.</li>
+              <li>Hibernate would throw a mapping validation error at startup because the stored string doesn't match any enum <code>name()</code>.</li>
+              <li>A <code>@Converter</code> would solve it but adds complexity — plain String is simpler and equally readable.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="hw-block" style="margin-top:14px">
+          <div class="hw-label">DB schema (actual MySQL)</div>
+          <pre>status ENUM('Applied','Shortlisted','Interview Scheduled','Interview Completed',
+            'Selected','Offered','Recruited','Rejected','Withdrawn') DEFAULT 'Applied'
+
+mode   ENUM('In-Person','Online','Telephonic') DEFAULT 'In-Person'</pre>
+          <div class="hw-label" style="margin-top:10px">Entity mapping</div>
+          <pre>@Column(columnDefinition = "ENUM('Applied','Shortlisted',...)")
+private String status = "Applied";</pre>
+          <p>The <code>columnDefinition</code> attribute tells Hibernate what to <em>expect</em> during schema validation, not what to create (since <code>ddl-auto=validate</code> never creates tables).</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ EXCEPTIONS ═══════════════ -->
+  <section id="exceptions">
+    <div class="section-label">Backend · Error Handling</div>
+    <h2>7. Exception-to-HTTP-Status Mapping</h2>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">⚠️</span>
+        <span class="title">Why throw exceptions instead of returning error ResponseEntities from services?</span>
+        <span class="file-ref">GlobalExceptionHandler.java · all service classes</span>
+      </div>
+      <div class="card-body">
+        <div class="why-grid">
+          <div class="why-box why-yes">
+            <div class="label">✅ Why throw exceptions in services</div>
+            <ul>
+              <li><strong>Separation of concerns</strong> — services don't know about HTTP. They throw business exceptions; the handler layer translates to status codes.</li>
+              <li><strong>Clean service signatures</strong> — methods return domain objects, not <code>ResponseEntity&lt;?&gt;</code>. Easy to test and reuse.</li>
+              <li><strong>@RestControllerAdvice centralizes all error responses</strong> — one place to change the error body format.</li>
+            </ul>
+          </div>
+          <div class="why-box why-no">
+            <div class="label">❌ Why not return ResponseEntity from service</div>
+            <ul>
+              <li>Services become HTTP-aware, breaking the layered architecture.</li>
+              <li>Callers must unwrap the entity; calling a service from a scheduler or test becomes awkward.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="hw-block" style="margin-top:14px">
+          <div class="hw-label">Exception-to-status mapping table</div>
+          <table>
+            <tr><th>Exception thrown</th><th>HTTP Status</th><th>Use case</th></tr>
+            <tr><td><code>IllegalArgumentException</code></td><td>400 Bad Request</td><td>Invalid input, entity not found, duplicate apply</td></tr>
+            <tr><td><code>SecurityException</code></td><td>403 Forbidden</td><td>Employer trying to modify another employer's data</td></tr>
+            <tr><td><code>MethodArgumentNotValidException</code></td><td>400 Bad Request</td><td>Bean Validation (@NotBlank etc.) failure</td></tr>
+          </table>
+          <p style="margin-top:8px">Note: "Already applied" throws <code>IllegalArgumentException</code> → 400. The spec mentioned 409 Conflict; 400 was used because the existing handler doesn't have a 409 mapping and adding one was out of scope.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ JPA ═══════════════ -->
+  <section id="jpa">
+    <div class="section-label">Backend · Persistence</div>
+    <h2>8. Spring Data JPA + Hibernate — ddl-auto=validate</h2>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">🗃️</span>
+        <span class="title">Why JPA/ORM instead of plain JDBC? And why validate, not create?</span>
+        <span class="file-ref">application.properties · all repository interfaces</span>
+      </div>
+      <div class="card-body">
+        <div class="why-grid">
+          <div class="why-box why-yes">
+            <div class="label">✅ Why Spring Data JPA</div>
+            <ul>
+              <li><strong>Zero boilerplate repositories</strong> — <code>JpaRepository</code> provides save, findById, deleteById etc. with no SQL. Derived query methods (<code>findByCandidate_CandidateId</code>) are generated from the method name.</li>
+              <li><strong>Object graph navigation</strong> — lazy-loaded <code>@ManyToOne</code> associations let the service traverse <code>app.getVacancy().getEmployer().getEmail()</code> naturally.</li>
+              <li><strong>Transaction management</strong> — <code>@Transactional</code> on service methods ensures atomic multi-step operations (apply + notify, schedule interview + update application status).</li>
+            </ul>
+          </div>
+          <div class="why-box why-no">
+            <div class="label">❌ Why not plain JDBC / JdbcTemplate</div>
+            <ul>
+              <li>Requires hand-writing every SELECT, INSERT, UPDATE, DELETE.</li>
+              <li>Object mapping (ResultSet → Java object) must be done manually.</li>
+              <li>Fine for simple queries but becomes verbose for complex associations.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="hw-block" style="margin-top:14px">
+          <div class="hw-label">Why ddl-auto=validate (not create / update)?</div>
+          <p>The 9 tables were designed and created manually in MySQL before development began. <code>validate</code> means Hibernate compares the entity field definitions against the actual DB schema at startup and throws an error if they don't match — it never alters the database. This prevents accidental schema drift and forces entity classes to exactly mirror the agreed-upon schema.</p>
+        </div>
+        <div class="hw-block" style="margin-top:10px">
+          <div class="hw-label">Lazy vs Eager loading choice</div>
+          <pre>@ManyToOne(fetch = FetchType.LAZY)   // used for all associations
+@JoinColumn(name = "vacancy_id")
+private Vacancy vacancy;</pre>
+          <p>LAZY means the associated <code>Vacancy</code> is not fetched until <code>getVacancy()</code> is called. This avoids N+1 query issues and cartesian product joins when only a list of application IDs is needed. The service methods navigate associations explicitly when they need them.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ NOTIFICATIONS ═══════════════ -->
+  <section id="notifications">
+    <div class="section-label">Backend · Notifications</div>
+    <h2>9. Dual-channel Notification System (DB + Email)</h2>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">🔔</span>
+        <span class="title">Why save notifications to the DB AND attempt email, with silent email failure?</span>
+        <span class="file-ref">NotificationService.java · Notification.java · NotificationController.java</span>
+      </div>
+      <div class="card-body">
+        <div class="why-grid">
+          <div class="why-box why-yes">
+            <div class="label">✅ DB-first notification strategy</div>
+            <ul>
+              <li><strong>In-app notification bell</strong> — the frontend's notification page polls <code>GET /api/notifications</code>. This requires DB persistence regardless of email.</li>
+              <li><strong>Email failure is non-critical</strong> — SMTP may be unconfigured in dev. Wrapping email in try/catch and logging a warning means the main business operation (apply, schedule interview) always succeeds.</li>
+              <li><strong>Audit trail</strong> — the <code>notifications</code> table records every status change event. Useful for disputes and debugging.</li>
+            </ul>
+          </div>
+          <div class="why-box why-no">
+            <div class="label">❌ Why not email-only</div>
+            <ul>
+              <li>SMTP not always configured — would break the whole apply flow during development.</li>
+              <li>No in-app notification history.</li>
+              <li>No offline support — if the user's email server is down, the notification is permanently lost.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="hw-block" style="margin-top:14px">
+          <div class="hw-label">Flow</div>
+          <div class="flow">
+            <div class="step">Service triggers notify()</div>
+            <div class="arrow">→</div>
+            <div class="step green">Save to notifications table</div>
+            <div class="arrow">→</div>
+            <div class="step amber">Attempt SMTP email</div>
+            <div class="arrow">→</div>
+            <div class="step">Log warn if fails, continue</div>
+          </div>
+          <p>SMTP is skipped automatically if <code>spring.mail.username</code> contains the placeholder <code>"your-email"</code>, avoiding connection timeouts in dev.</p>
+        </div>
+        <div class="hw-block" style="margin-top:10px">
+          <div class="hw-label">Why @Autowired(required=false) for JavaMailSender</div>
+          <pre>@Autowired(required = false)
+private JavaMailSender mailSender;</pre>
+          <p>If SMTP credentials are not configured, Spring cannot create the <code>JavaMailSender</code> bean. <code>required=false</code> means <code>mailSender</code> will be null and the null check in <code>sendEmail()</code> skips it cleanly instead of crashing the app on startup.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ AI ═══════════════ -->
+  <section id="ai">
+    <div class="section-label">Backend · AI Feature</div>
+    <h2>10. AI Resume Analysis via SAP Hyperspace LLM</h2>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">✨</span>
+        <span class="title">Why use an LLM for resume scoring? Why not keyword matching?</span>
+        <span class="file-ref">AiAnalysisService.java · ResumeController.java · application.properties</span>
+      </div>
+      <div class="card-body">
+        <div class="why-grid">
+          <div class="why-box why-yes">
+            <div class="label">✅ Why LLM-based analysis</div>
+            <ul>
+              <li><strong>Semantic understanding</strong> — a candidate who listed "React.js" matches a job requiring "frontend development" even without the exact keyword.</li>
+              <li><strong>Structured output</strong> — the prompt demands <code>{"score": 0-100, "summary": "..."}</code>. The score is stored in <code>ai_score</code> and surfaces as a sortable badge in the UI.</li>
+              <li><strong>SAP Hyperspace</strong> — uses the internal SAP AI proxy at <code>localhost:6655/openai/v1</code>, which is already running in the dev environment (the same proxy used by Claude Code). No external API key or cost.</li>
+            </ul>
+          </div>
+          <div class="why-box why-no">
+            <div class="label">❌ Why not keyword matching</div>
+            <ul>
+              <li>Brittle — misses synonyms, abbreviations, context.</li>
+              <li>Requires maintaining a skills taxonomy.</li>
+              <li>Scores are arbitrary counts, not a holistic fit assessment.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="hw-block" style="margin-top:14px">
+          <div class="hw-label">Why Apache PDFBox for text extraction?</div>
+          <p>Resumes are uploaded as PDFs. PDFBox (Apache, open-source) extracts the plain text. The text is truncated to 4,000 characters before sending to the LLM to stay within token limits. PDFBox is a pure Java library — no native dependencies or external services.</p>
+        </div>
+        <div class="hw-block" style="margin-top:10px">
+          <div class="hw-label">Why Java HttpClient instead of a Spring/OkHttp client?</div>
+          <p>Java 11's built-in <code>java.net.http.HttpClient</code> is used for the LLM API call. No new dependency needed — the OpenAI-compatible API is called with a simple POST with a JSON body. Adding a dedicated HTTP client library would be over-engineering for a single API call.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ SCHEDULER ═══════════════ -->
+  <section id="scheduler">
+    <div class="section-label">Backend · Automation</div>
+    <h2>11. @Scheduled Vacancy Expiry Job</h2>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">⏰</span>
+        <span class="title">Why a scheduled job instead of checking deadline at query time?</span>
+        <span class="file-ref">VacancyExpiryScheduler.java</span>
+      </div>
+      <div class="card-body">
+        <div class="why-grid">
+          <div class="why-box why-yes">
+            <div class="label">✅ Why proactive DB update at midnight</div>
+            <ul>
+              <li><strong>Consistent state</strong> — after the cron runs, the <code>status</code> column is authoritative. No conditional logic scattered across every vacancy query.</li>
+              <li><strong>Works with the public endpoint</strong> — <code>GET /api/vacancies/open</code> filters by <code>status = 'Open'</code>. If we didn't update the DB, we'd need deadline filtering in every query.</li>
+              <li><strong>Simple cron expression</strong> — <code>0 0 0 * * *</code> = midnight every day. Easy to change if requirements change.</li>
+            </ul>
+          </div>
+          <div class="why-box why-no">
+            <div class="label">❌ Why not filter at query time</div>
+            <ul>
+              <li>Every vacancy list query would need <code>WHERE deadline &gt; NOW()</code>. Easy to forget in one place.</li>
+              <li>Admin stats (<code>openVacancies</code> count) would also need the filter.</li>
+              <li>Stale "Open" records accumulate, making DB state misleading.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ SWAGGER ═══════════════ -->
+  <section id="swagger">
+    <div class="section-label">Backend · Developer Experience</div>
+    <h2>12. OpenAPI / Swagger UI (springdoc)</h2>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">📖</span>
+        <span class="title">Why springdoc-openapi?</span>
+        <span class="file-ref">OpenApiConfig.java · application.properties · all controllers (@Tag, @Operation)</span>
+      </div>
+      <div class="card-body">
+        <div class="why-grid">
+          <div class="why-box why-yes">
+            <div class="label">✅ Why Swagger UI</div>
+            <ul>
+              <li><strong>Live interactive documentation</strong> — available at <code>/swagger-ui.html</code>. Any team member can test endpoints without Postman.</li>
+              <li><strong>Auto-generated from code</strong> — no separate spec file to maintain. Annotations on controllers (<code>@Tag</code>, <code>@Operation</code>) enrich the docs.</li>
+              <li><strong>springdoc 2.x for Spring Boot 3</strong> — the older springfox library is incompatible with Spring Boot 3+. springdoc is the maintained replacement.</li>
+            </ul>
+          </div>
+          <div class="why-box why-no">
+            <div class="label">❌ Why not springfox</div>
+            <ul>
+              <li>springfox has not been maintained since 2022 and is broken with Spring Boot 3 / Spring 6 (reflection changes).</li>
+              <li>Many open GitHub issues with no resolution.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ FRONTEND ═══════════════ -->
+  <section id="frontend">
+    <div class="section-label">Frontend · Tech Stack</div>
+    <h2>13. React 18 + Vite for the Frontend</h2>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">⚛️</span>
+        <span class="title">Why React? Why Vite over CRA?</span>
+        <span class="file-ref">frontend/src/App.jsx · frontend/vite.config.js</span>
+      </div>
+      <div class="card-body">
+        <div class="why-grid">
+          <div class="why-box why-yes">
+            <div class="label">✅ Why React</div>
+            <ul>
+              <li><strong>Component model</strong> — every page (e.g. ApplicationsPage, InterviewsPage) is a self-contained component with its own state and UI. Easy to develop independently.</li>
+              <li><strong>Hooks</strong> — <code>useState</code> and <code>useEffect</code> handle data fetching and UI state without class boilerplate.</li>
+              <li><strong>Ecosystem</strong> — React Router for navigation, React Icons for icon sets, Axios for HTTP.</li>
+            </ul>
+          </div>
+          <div class="why-box why-no">
+            <div class="label">Why Vite over Create-React-App (CRA)</div>
+            <ul>
+              <li>Vite uses native ES modules in dev — cold start is near-instant (&lt;1s vs 15–30s for CRA on large projects).</li>
+              <li>CRA is officially deprecated by the React team.</li>
+              <li>Vite's proxy config (<code>server.proxy</code>) forwards <code>/api</code> to Spring on port 8080 so CORS is never needed during development.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ ROUTING ═══════════════ -->
+  <section id="routing">
+    <div class="section-label">Frontend · Navigation</div>
+    <h2>14. React Router v6 — Client-side Routing</h2>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">🗺️</span>
+        <span class="title">Why client-side routing? How does ProtectedRoute work?</span>
+        <span class="file-ref">App.jsx · ProtectedRoute.jsx</span>
+      </div>
+      <div class="card-body">
+        <div class="why-grid">
+          <div class="why-box why-yes">
+            <div class="label">✅ Why client-side routing</div>
+            <ul>
+              <li><strong>SPA architecture</strong> — once the JS bundle loads, navigation between pages is instant (no full page reload). The candidate dashboard, job search, and applications pages all share one app shell.</li>
+              <li><strong>Programmatic navigation</strong> — after login, <code>navigate('/candidate/dashboard')</code> sends the user to the right page based on their role.</li>
+            </ul>
+          </div>
+          <div class="why-box why-no">
+            <div class="label">How ProtectedRoute guards work</div>
+            <p>The <code>ProtectedRoute</code> component checks <code>localStorage.getItem('role')</code>. If absent, redirects to <code>/login</code>. If role doesn't match (e.g. a candidate trying to visit <code>/employer/dashboard</code>), redirects accordingly. The actual security is enforced by the JWT on the server — the client guard is only UX.</p>
+          </div>
+        </div>
+        <div class="hw-block" style="margin-top:14px">
+          <div class="hw-label">Route structure</div>
+          <pre>/                     → LandingPage (public)
+/login                → Candidate login
+/employer/login       → Employer login
+/register             → Candidate registration
+/candidate/dashboard  → ProtectedRoute(CANDIDATE) → CandidateDashboard
+/employer/dashboard   → ProtectedRoute(EMPLOYER)  → EmployerDashboard
+/admin/dashboard      → ProtectedRoute(ADMIN)     → AdminDashboard</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ AXIOS ═══════════════ -->
+  <section id="axios">
+    <div class="section-label">Frontend · HTTP</div>
+    <h2>15. Axios Instance with Interceptors</h2>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">🌐</span>
+        <span class="title">Why a shared axios instance instead of fetch()?</span>
+        <span class="file-ref">frontend/src/api/axios.js</span>
+      </div>
+      <div class="card-body">
+        <div class="why-grid">
+          <div class="why-box why-yes">
+            <div class="label">✅ Why axios + shared instance</div>
+            <ul>
+              <li><strong>baseURL</strong> — all API calls use <code>/api</code> as base. No URL duplication across 15+ pages.</li>
+              <li><strong>withCredentials: true</strong> — set once; every request automatically sends the HttpOnly JWT cookie. No manual header code anywhere.</li>
+              <li><strong>Response interceptor</strong> — 401 responses automatically clear localStorage and redirect to <code>/login</code>. Session expiry is handled globally.</li>
+            </ul>
+          </div>
+          <div class="why-box why-no">
+            <div class="label">❌ Why not native fetch()</div>
+            <ul>
+              <li>fetch() requires manual JSON serialization and <code>.json()</code> parsing every time.</li>
+              <li>No built-in interceptors — the 401 redirect logic would need to be duplicated in every API call.</li>
+              <li>Error handling is awkward — fetch only rejects on network errors, not 4xx/5xx.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="hw-block" style="margin-top:14px">
+          <div class="hw-label">The interceptor</div>
+          <pre>api.interceptors.response.use(
+  res => res,
+  err => {
+    if (err.response?.status === 401) {
+      localStorage.clear()
+      window.location.href = '/login'
+    }
+    return Promise.reject(err)
+  }
+)</pre>
+          <p>If the JWT expires (after 24h) and the user tries any authenticated action, they are silently redirected to login without seeing a confusing error message.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ STATE ═══════════════ -->
+  <section id="state">
+    <div class="section-label">Frontend · Architecture</div>
+    <h2>16. Local Component State (useState) — No Redux / Zustand</h2>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">🧠</span>
+        <span class="title">Why no global state manager?</span>
+        <span class="file-ref">All page components</span>
+      </div>
+      <div class="card-body">
+        <div class="why-grid">
+          <div class="why-box why-yes">
+            <div class="label">✅ Why local useState per page</div>
+            <ul>
+              <li><strong>Pages are independent</strong> — the Applications page data has nothing to share with the Vacancies page. No cross-page state.</li>
+              <li><strong>Simpler mental model</strong> — each page fetches its own data on mount (<code>useEffect</code>), displays it, and updates it on user action. No store, no actions, no reducers.</li>
+              <li><strong>Academic scope</strong> — Redux/Zustand add significant boilerplate. For 5 role-scoped pages, it is over-engineering.</li>
+            </ul>
+          </div>
+          <div class="why-box why-no">
+            <div class="label">❌ When you'd add Redux / Zustand</div>
+            <ul>
+              <li>When the same data (e.g. user profile, notification count) needs to be shown in multiple unrelated components simultaneously.</li>
+              <li>When there is complex optimistic update logic that spans multiple pages.</li>
+              <li>Neither case applies here — the notification badge could be the one exception, but it is re-fetched per page instead.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="hw-block" style="margin-top:14px">
+          <div class="hw-label">What IS shared (non-sensitive, in localStorage)</div>
+          <table>
+            <tr><th>Key</th><th>Value</th><th>Used for</th></tr>
+            <tr><td><code>role</code></td><td>CANDIDATE / EMPLOYER / ADMIN</td><td>ProtectedRoute guard, dashboard redirect</td></tr>
+            <tr><td><code>userId</code></td><td>integer</td><td>Display, linking profile</td></tr>
+            <tr><td><code>name</code></td><td>string</td><td>Greeting in nav bar</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ CSS ═══════════════ -->
+  <section id="css">
+    <div class="section-label">Frontend · Styling</div>
+    <h2>17. Bootstrap 5 for UI Components</h2>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">🎨</span>
+        <span class="title">Why Bootstrap? Why no Tailwind or Material UI?</span>
+        <span class="file-ref">All JSX pages (className="btn btn-primary", "card", etc.)</span>
+      </div>
+      <div class="card-body">
+        <div class="why-grid">
+          <div class="why-box why-yes">
+            <div class="label">✅ Why Bootstrap 5</div>
+            <ul>
+              <li><strong>Speed</strong> — pre-built classes for cards, forms, buttons, modals, grids. The UI was built in hours, not days.</li>
+              <li><strong>No build step needed</strong> — Bootstrap is a pure CSS library. No CSS-in-JS, no PostCSS config, no Tailwind purge setup.</li>
+              <li><strong>Familiar to the team</strong> — both team members have prior Bootstrap exposure; zero onboarding cost.</li>
+              <li><strong>Inline style overrides</strong> — the dark theme (<code>background: #0f172a</code>) and custom elements (status badges, score chips) use inline styles for precision, layered on top of Bootstrap defaults.</li>
+            </ul>
+          </div>
+          <div class="why-box why-no">
+            <div class="label">Why not Tailwind / MUI / Chakra</div>
+            <ul>
+              <li><strong>Tailwind</strong> — requires a build pipeline with PostCSS and careful purge config. Utility classes become verbose in JSX. Good for large teams, overkill for a 2-person academic project.</li>
+              <li><strong>Material UI / Chakra</strong> — opinionated design language that fights against customisation. Getting to a dark, professional recruiter-portal look requires significant theme overriding.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="hw-block" style="margin-top:14px">
+          <div class="hw-label">Custom styling approach</div>
+          <p>Bootstrap provides the grid (<code>row / col</code>), utilities (<code>d-flex, gap-2, fw-semibold</code>), and base components. Colour, border-radius, and shadow customisations are applied with inline <code>style={{}}</code> props on individual elements. This avoids a custom SCSS compilation step while keeping full visual control over the dark theme palette.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ REPORTS ═══════════════ -->
+  <section id="reports">
+    <div class="section-label">Backend + Frontend · Trust &amp; Safety</div>
+    <h2>18. Report System — Mutual Accountability</h2>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">🚩</span>
+        <span class="title">Why a report system? Why can both sides report each other?</span>
+        <span class="file-ref">ReportService.java · Report.java · ReportController.java · ApplicationsPage.jsx</span>
+      </div>
+      <div class="card-body">
+        <div class="why-grid">
+          <div class="why-box why-yes">
+            <div class="label">✅ Why bidirectional reporting</div>
+            <ul>
+              <li><strong>Employer reports candidate</strong> — fake credentials, no-show, unprofessional behaviour. Protects employers from bad actors.</li>
+              <li><strong>Candidate reports employer</strong> — discriminatory behaviour, false job descriptions, harassment. Protects candidates.</li>
+              <li><strong>Admin dashboard</strong> — reports surface in the admin panel per user with a count badge. Admin can deactivate accounts if needed.</li>
+            </ul>
+          </div>
+          <div class="why-box why-no">
+            <div class="label">Design decisions in reports</div>
+            <ul>
+              <li><strong>One report per pair</strong> — a unique constraint check (<code>existsByReporterTypeAndReporterIdAndReportedTypeAndReportedId</code>) prevents duplicate reporting.</li>
+              <li><strong>Reason includes star rating + category + details</strong> — the frontend concatenates these into a structured string before submission, giving admins structured information even from a plain-text field.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ SUMMARY ═══════════════ -->
+  <section>
+    <div class="section-label">Summary</div>
+    <h2>Quick Reference — All Major Decisions</h2>
+    <table>
+      <tr>
+        <th>Decision</th>
+        <th>Chosen Approach</th>
+        <th>Alternative Not Used</th>
+        <th>Primary Reason</th>
+      </tr>
+      <tr><td>Auth mechanism</td><td>JWT (JJWT 0.12.6)</td><td>HttpSession</td><td>Stateless, no server-side session storage</td></tr>
+      <tr><td>Token storage</td><td>HttpOnly Cookie</td><td>localStorage / Authorization header</td><td>XSS-resistant, auto-attached</td></tr>
+      <tr><td>Password hashing</td><td>BCrypt</td><td>SHA-256, MD5, plain</td><td>Slow, salted, Spring-native</td></tr>
+      <tr><td>Code verbosity</td><td>Explicit getters/setters</td><td>@Data (Lombok)</td><td>Academic requirement, debuggability</td></tr>
+      <tr><td>DI style</td><td>Constructor injection</td><td>@Autowired field</td><td>Immutability, testability</td></tr>
+      <tr><td>DB enum mapping</td><td>Plain String field</td><td>@Enumerated(EnumType.STRING)</td><td>DB values contain spaces/hyphens</td></tr>
+      <tr><td>Error handling</td><td>Exception → GlobalExceptionHandler</td><td>ResponseEntity from service</td><td>Separation of concerns</td></tr>
+      <tr><td>ORM</td><td>Spring Data JPA / Hibernate</td><td>JDBC / MyBatis</td><td>Derived queries, association navigation</td></tr>
+      <tr><td>DDL mode</td><td>validate</td><td>create / update</td><td>Schema pre-defined; prevent drift</td></tr>
+      <tr><td>Notifications</td><td>DB + optional SMTP</td><td>Email-only</td><td>In-app bell + resilience to SMTP failures</td></tr>
+      <tr><td>AI analysis</td><td>LLM via SAP Hyperspace</td><td>Keyword matching</td><td>Semantic understanding, free internal API</td></tr>
+      <tr><td>Vacancy expiry</td><td>@Scheduled cron job</td><td>Filter at query time</td><td>Authoritative DB state</td></tr>
+      <tr><td>API docs</td><td>springdoc-openapi 2.6</td><td>springfox</td><td>springfox broken on Spring Boot 3</td></tr>
+      <tr><td>Frontend framework</td><td>React 18</td><td>Vue / Angular / plain HTML</td><td>Component model, hooks, ecosystem</td></tr>
+      <tr><td>Build tool</td><td>Vite</td><td>Create-React-App (CRA)</td><td>CRA deprecated, Vite instant HMR</td></tr>
+      <tr><td>HTTP client (FE)</td><td>Axios instance + interceptors</td><td>fetch()</td><td>Shared config, global 401 handler</td></tr>
+      <tr><td>State management</td><td>useState per page</td><td>Redux / Zustand</td><td>No shared cross-page state needed</td></tr>
+      <tr><td>CSS</td><td>Bootstrap 5 + inline styles</td><td>Tailwind / MUI / Chakra</td><td>Speed, familiarity, no build config</td></tr>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>

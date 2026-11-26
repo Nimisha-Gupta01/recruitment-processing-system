@@ -66,7 +66,7 @@ function ReportModal({ vacancy, onClose }) {
           <div className="modal-header border-0 pb-0">
             <div>
               <h5 className="modal-title fw-bold mb-0">Report Employer</h5>
-              <p className="text-muted small mb-0">{vacancy.employerOrgName} · {vacancy.designation}</p>
+              <p className="text-muted small mb-0">{vacancy.orgName || vacancy.employerOrgName} · {vacancy.designation}</p>
             </div>
             <button type="button" className="btn-close" onClick={onClose} />
           </div>
@@ -130,6 +130,7 @@ export default function JobSearchPage() {
   const [vacancies, setVacancies] = useState([])
   const [filters, setFilters] = useState({ location: '', salaryMax: '' })
   const [modal, setModal] = useState(null)
+  const [detailVacancy, setDetailVacancy] = useState(null)
   const [reportModal, setReportModal] = useState(null)
   const [coverNote, setCoverNote] = useState('')
   const [resumeFile, setResumeFile] = useState(null)
@@ -143,18 +144,27 @@ export default function JobSearchPage() {
     api.get('/vacancies/open')
       .then(r => setVacancies(r.data))
       .catch(() => {
-        // TODO: remove mock
         setVacancies([
           { vacancyId: 1, designation: 'Software Engineer', employerOrgName: 'TechCorp', location: 'Bangalore', salaryMin: 600000, salaryMax: 1200000, applicationDeadline: '2026-11-30' }
         ])
       })
+    // Load already-applied vacancy IDs so Report button shows on page load
+    api.get('/applications/my')
+      .then(r => setAppliedIds(new Set(r.data.map(a => a.vacancyId))))
+      .catch(() => {})
   }, [])
 
-  const filtered = vacancies.filter(v => {
-    if (filters.location && !v.location.toLowerCase().includes(filters.location.toLowerCase())) return false
-    if (filters.salaryMax && v.salaryMax > Number(filters.salaryMax)) return false
-    return true
-  })
+  const filtered = vacancies
+    .filter(v => {
+      if (filters.location && !v.location.toLowerCase().includes(filters.location.toLowerCase())) return false
+      if (filters.salaryMax && v.salaryMax > Number(filters.salaryMax)) return false
+      return true
+    })
+    .sort((a, b) => {
+      const aApplied = appliedIds.has(a.vacancyId) ? 1 : 0
+      const bApplied = appliedIds.has(b.vacancyId) ? 1 : 0
+      return aApplied - bApplied
+    })
 
   function openModal(vacancy) {
     setModal(vacancy)
@@ -250,27 +260,26 @@ export default function JobSearchPage() {
         <div className="row g-4">
           {filtered.map(v => (
             <div className="col-md-4" key={v.vacancyId}>
-              <div className="card recpro-card h-100">
-                <div className="card-body">
-                  <h5 className="card-title">{v.designation}</h5>
-                  <p className="card-text text-muted mb-1">{v.employerOrgName}</p>
+              <div className="card recpro-card h-100 d-flex flex-column">
+                <div className="card-body flex-grow-1">
+                  <h5 className="card-title fw-bold mb-1">{v.designation}</h5>
+                  <p className="card-text mb-2 fw-semibold" style={{ color: '#2563eb', fontSize: 14 }}>{v.orgName || v.employerOrgName}</p>
                   <p className="card-text mb-1"><small><FaMapMarkerAlt color="#6c757d" className="me-1" />{v.location}</small></p>
                   <p className="card-text mb-1"><small><FaMoneyBillWave color="#6c757d" className="me-1" />{formatSalary(v.salaryMin)} – {formatSalary(v.salaryMax)}</small></p>
-                  <p className="card-text"><small><FaCalendarAlt color="#6c757d" className="me-1" />Deadline: {v.applicationDeadline}</small></p>
+                  <p className="card-text mb-2"><small><FaCalendarAlt color="#6c757d" className="me-1" />Deadline: {v.applicationDeadline}</small></p>
+                  {v.jobDescription && (
+                    <p className="card-text text-muted small mb-0" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {v.jobDescription}
+                    </p>
+                  )}
                 </div>
-                <div className="card-footer d-flex gap-2">
+                <div className="card-footer d-flex gap-2 flex-wrap">
                   <button
                     className="btn btn-primary btn-sm flex-grow-1"
-                    onClick={() => openModal(v)}
+                    onClick={() => appliedIds.has(v.vacancyId) ? null : setDetailVacancy(v)}
                     disabled={appliedIds.has(v.vacancyId)}
                   >
-                    {appliedIds.has(v.vacancyId) ? 'Applied' : 'Apply'}
-                  </button>
-                  <button
-                    className="btn btn-outline-danger btn-sm"
-                    onClick={() => setReportModal(v)}
-                  >
-                    Report
+                    {appliedIds.has(v.vacancyId) ? 'Applied ✓' : 'Apply'}
                   </button>
                 </div>
               </div>
@@ -279,6 +288,61 @@ export default function JobSearchPage() {
           {filtered.length === 0 && <p className="text-muted">No vacancies found.</p>}
         </div>
       </div>
+
+      {/* Job Detail Modal */}
+      {detailVacancy && (
+        <div className="modal d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => setDetailVacancy(null)}>
+          <div className="modal-dialog modal-lg modal-dialog-scrollable" onClick={e => e.stopPropagation()}>
+            <div className="modal-content">
+              <div className="modal-header" style={{ background: '#0f172a', color: '#fff' }}>
+                <div>
+                  <h5 className="modal-title fw-bold mb-0">{detailVacancy.designation}</h5>
+                  <p className="mb-0 fw-semibold" style={{ color: '#60a5fa', fontSize: 15 }}>{detailVacancy.orgName || detailVacancy.employerOrgName}</p>
+                </div>
+                <button className="btn-close btn-close-white" onClick={() => setDetailVacancy(null)} />
+              </div>
+              <div className="modal-body">
+                <div className="row g-3 mb-4">
+                  {[
+                    ['📍 Location', detailVacancy.location],
+                    ['💰 Salary', `${formatSalary(detailVacancy.salaryMin)} – ${formatSalary(detailVacancy.salaryMax)}`],
+                    ['🗓 Deadline', detailVacancy.applicationDeadline],
+                    ['🏢 Employment Type', detailVacancy.employmentType],
+                    ['🎓 Qualification', detailVacancy.requiredQual],
+                    ['⏳ Experience', `${detailVacancy.requiredExpYrs} yr(s)`],
+                    ['👥 Openings', detailVacancy.numOpenings],
+                    ['🏬 Department', detailVacancy.department],
+                  ].filter(([, v]) => v).map(([label, value]) => (
+                    <div className="col-md-6" key={label}>
+                      <div className="text-muted small">{label}</div>
+                      <div className="fw-semibold">{value}</div>
+                    </div>
+                  ))}
+                </div>
+                {detailVacancy.jobDescription && (
+                  <>
+                    <hr />
+                    <h6 className="fw-bold mb-3">Job Description</h6>
+                    <div style={{ whiteSpace: 'pre-wrap', fontSize: 14, lineHeight: 1.8, color: '#374151' }}>
+                      {detailVacancy.jobDescription}
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setDetailVacancy(null)}>Close</button>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => { setDetailVacancy(null); openModal(detailVacancy) }}
+                  disabled={appliedIds.has(detailVacancy.vacancyId)}
+                >
+                  {appliedIds.has(detailVacancy.vacancyId) ? 'Already Applied' : 'Apply Now'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {modal && (
         <div className="modal d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>

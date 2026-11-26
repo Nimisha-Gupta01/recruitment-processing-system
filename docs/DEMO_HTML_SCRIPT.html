@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RecPro — Demo Script</title>
+<style>
+  :root {
+    --navy: #0f172a;
+    --blue: #2563eb;
+    --blue-light: #60a5fa;
+    --green: #16a34a;
+    --amber: #d97706;
+    --red: #dc2626;
+    --purple: #7c3aed;
+    --slate: #64748b;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --muted: #64748b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; }
+
+  /* Header */
+  .header { background: var(--navy); color: #fff; padding: 24px 40px; display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { font-size: 26px; font-weight: 800; color: var(--blue-light); }
+  .header .meta { font-size: 13px; color: #94a3b8; text-align: right; }
+  .header .meta strong { color: #fff; }
+
+  /* Layout */
+  .layout { display: flex; min-height: calc(100vh - 90px); }
+  .sidebar { width: 230px; min-width: 230px; background: var(--navy); padding: 20px 0; position: sticky; top: 0; height: calc(100vh - 90px); overflow-y: auto; }
+  .sidebar a { display: block; padding: 9px 20px; color: #94a3b8; text-decoration: none; font-size: 13px; border-left: 3px solid transparent; transition: all 0.15s; }
+  .sidebar a:hover, .sidebar a.active { background: rgba(255,255,255,0.07); color: #fff; border-left-color: var(--blue-light); }
+  .sidebar .section-label { padding: 14px 20px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #475569; }
+  .sidebar .time-badge { float: right; font-size: 11px; background: rgba(255,255,255,0.1); padding: 1px 6px; border-radius: 10px; color: #94a3b8; }
+  .main { flex: 1; padding: 32px 40px; max-width: 960px; }
+
+  /* Credentials grid */
+  .creds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-bottom: 32px; }
+  .cred-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; position: relative; overflow: hidden; }
+  .cred-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .cred-card.employer::before { background: var(--blue); }
+  .cred-card.candidate::before { background: var(--green); }
+  .cred-card.admin::before { background: var(--purple); }
+  .cred-role { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+  .cred-card.employer .cred-role { color: var(--blue); }
+  .cred-card.candidate .cred-role { color: var(--green); }
+  .cred-card.admin .cred-role { color: var(--purple); }
+  .cred-name { font-weight: 700; font-size: 15px; margin-bottom: 6px; }
+  .cred-email { font-family: 'Courier New', monospace; font-size: 12px; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; display: block; margin-bottom: 4px; color: var(--navy); }
+  .cred-pass { font-family: 'Courier New', monospace; font-size: 12px; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; display: block; color: var(--slate); }
+  .cred-note { font-size: 11px; color: var(--muted); margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px; }
+
+  /* Section headers */
+  .section { margin-bottom: 48px; }
+  .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid var(--border); }
+  .section-num { width: 32px; height: 32px; border-radius: 50%; background: var(--navy); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; }
+  .section-title { font-size: 20px; font-weight: 700; }
+  .section-time { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--muted); background: #f1f5f9; padding: 4px 10px; border-radius: 20px; }
+
+  /* Steps */
+  .step { display: flex; gap: 16px; margin-bottom: 20px; }
+  .step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--blue); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .step-body { flex: 1; }
+  .step-action { font-weight: 600; margin-bottom: 4px; }
+  .step-say { background: #eff6ff; border-left: 3px solid var(--blue-light); padding: 8px 12px; border-radius: 0 6px 6px 0; font-style: italic; color: #1e40af; font-size: 13px; margin: 8px 0; }
+  .step-say::before { content: '💬 Say: '; font-style: normal; font-weight: 700; }
+
+  /* Tech flow panel */
+  .tech-flow { background: #0f172a; border-radius: 10px; padding: 16px 20px; margin-top: 10px; }
+  .tech-flow-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #475569; margin-bottom: 10px; }
+  .flow-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; font-size: 12px; }
+  .flow-row:last-child { margin-bottom: 0; }
+  .flow-label { width: 90px; min-width: 90px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 6px; border-radius: 3px; text-align: center; }
+  .fl-component { background: #1e3a5f; color: #60a5fa; }
+  .fl-api { background: #14532d; color: #4ade80; }
+  .fl-service { background: #3b0764; color: #c084fc; }
+  .fl-data { background: #431407; color: #fb923c; }
+  .flow-val { color: #e2e8f0; font-family: 'Courier New', monospace; }
+  .flow-val .file { color: #94a3b8; font-size: 11px; margin-left: 4px; }
+
+  /* Status table */
+  .status-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+  .status-table th { background: #f1f5f9; padding: 8px 12px; text-align: left; font-size: 12px; font-weight: 700; color: var(--muted); border-bottom: 1px solid var(--border); }
+  .status-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  .status-table tr:last-child td { border-bottom: none; }
+  .status-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .s-applied { background: #dbeafe; color: #1d4ed8; }
+  .s-shortlisted { background: #fef9c3; color: #854d0e; }
+  .s-interview { background: #e0f2fe; color: #0369a1; }
+  .s-completed { background: #f0fdf4; color: #15803d; }
+  .s-selected { background: #dcfce7; color: #15803d; }
+  .s-rejected { background: #fee2e2; color: #b91c1c; }
+  .s-withdrawn { background: #f1f5f9; color: #64748b; }
+
+  /* Info box */
+  .info-box { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 12px 16px; margin: 12px 0; font-size: 13px; }
+  .info-box::before { content: '⚡ '; }
+  .danger-box { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 12px 16px; margin: 12px 0; font-size: 13px; }
+  .danger-box::before { content: '🔴 '; }
+
+  /* Reset command */
+  .reset-cmd { background: #0f172a; color: #4ade80; font-family: 'Courier New', monospace; padding: 12px 16px; border-radius: 8px; font-size: 13px; }
+
+  /* Subsection */
+  .subsection { margin-bottom: 24px; }
+  .subsection-title { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 12px; padding-left: 10px; border-left: 3px solid var(--blue); }
+
+  /* Q&A */
+  .qa { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; }
+  .qa-q { font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+  .qa-q::before { content: 'Q: '; color: var(--blue); }
+  .qa-a { color: var(--slate); font-size: 13px; }
+  .qa-a::before { content: 'A: '; font-weight: 700; color: var(--green); }
+
+  @media print {
+    .sidebar { display: none; }
+    .layout { display: block; }
+    .main { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>RecPro</h1>
+    <div style="color:#94a3b8;font-size:13px;margin-top:4px;">Demo Script — 25-Minute Presentation Guide</div>
+  </div>
+  <div class="meta">
+    <div><strong>All passwords:</strong> Test@1234</div>
+    <div>Backend: localhost:8080 &nbsp;|&nbsp; Frontend: localhost:5173</div>
+  </div>
+</div>
+
+<div class="layout">
+  <nav class="sidebar">
+    <div class="section-label">Quick Jump</div>
+    <a href="#credentials">Credentials</a>
+    <div class="section-label">Demo Sections</div>
+    <a href="#s1">1 · Landing Page <span class="time-badge">2 min</span></a>
+    <a href="#s2">2 · Candidate Apply <span class="time-badge">5 min</span></a>
+    <a href="#s3">3 · Employer Flow <span class="time-badge">12 min</span></a>
+    <a href="#s4">4 · My Applications <span class="time-badge">3 min</span></a>
+    <a href="#s5">5 · Admin Dashboard <span class="time-badge">2 min</span></a>
+    <a href="#s6">6 · Security (if asked) <span class="time-badge">1 min</span></a>
+    <div class="section-label">Reference</div>
+    <a href="#reset">Reset DB</a>
+    <a href="#qa">Q&amp;A Answers</a>
+  </nav>
+
+  <main class="main">
+
+    <!-- CREDENTIALS -->
+    <section class="section" id="credentials">
+      <div class="section-header">
+        <div style="font-size:22px;">🔑</div>
+        <div class="section-title">Demo Accounts</div>
+      </div>
+      <div class="creds-grid">
+        <div class="cred-card employer">
+          <div class="cred-role">Employer (main)</div>
+          <div class="cred-name">TechNova HR</div>
+          <code class="cred-email">hr@technova.com</code>
+          <code class="cred-pass">Test@1234</code>
+          <div class="cred-note">7 vacancies · 8 applicants on Java Backend · use for entire employer workflow</div>
+        </div>
+        <div class="cred-card employer">
+          <div class="cred-role">Employer (extra)</div>
+          <div class="cred-name">CloudEdge HR</div>
+          <code class="cred-email">hr@cloudedge.com</code>
+          <code class="cred-pass">Test@1234</code>
+          <div class="cred-note">4 vacancies · optional fallback employer</div>
+        </div>
+        <div class="cred-card candidate">
+          <div class="cred-role">Candidate — Selected</div>
+          <div class="cred-name">Priya Sharma</div>
+          <code class="cred-email">priya@demo.com</code>
+          <code class="cred-pass">Test@1234</code>
+          <div class="cred-note">AI score 91 · Selected status · shows full journey</div>
+        </div>
+        <div class="cred-card candidate">
+          <div class="cred-role">Candidate — Live Apply</div>
+          <div class="cred-name">Nisha Verma</div>
+          <code class="cred-email">nisha@demo.com</code>
+          <code class="cred-pass">Test@1234</code>
+          <div class="cred-note">No applications yet · use for live apply demo</div>
+        </div>
+        <div class="cred-card candidate">
+          <div class="cred-role">Candidate — Interview</div>
+          <div class="cred-name">Amit Kulkarni</div>
+          <code class="cred-email">amit@demo.com</code>
+          <code class="cred-pass">Test@1234</code>
+          <div class="cred-note">AI score 95 · Interview Scheduled</div>
+        </div>
+        <div class="cred-card admin">
+          <div class="cred-role">Admin</div>
+          <div class="cred-name">Platform Admin</div>
+          <code class="cred-email">admin@recpro.com</code>
+          <code class="cred-pass">Test@1234</code>
+          <div class="cred-note">Platform oversight · employer approval · reports</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 1 -->
+    <section class="section" id="s1">
+      <div class="section-header">
+        <div class="section-num">1</div>
+        <div class="section-title">Public Landing Page</div>
+        <div class="section-time">2 min</div>
+      </div>
+      <div class="info-box">Start here — not logged in. URL: <strong>http://localhost:5173</strong></div>
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-action">Show the stats bar: active openings, companies hiring, candidates registered</div>
+          <div class="step-say">"The stats are live from the database — 25 open positions across 5 companies right now."</div>
+          <div class="tech-flow">
+            <div class="tech-flow-title">What happens under the hood</div>
+            <div class="flow-row"><span class="flow-label fl-component">Component</span><span class="flow-val">LandingPage.jsx <span class="file">— useEffect on mount</span></span></div>
+            <div class="flow-row"><span class="flow-label fl-api">API Call</span><span class="flow-val">GET /api/vacancies/open <span class="file">→ VacancyController.getOpenVacancies()</span></span></div>
+            <div class="flow-row"><span class="flow-label fl-api">API Call</span><span class="flow-val">GET /api/stats/summary <span class="file">→ StatsController — returns candidatesRegistered count</span></span></div>
+            <div class="flow-row"><span class="flow-label fl-service">Service</span><span class="flow-val">VacancyService.getOpenVacancies() <span class="file">→ WHERE status='Open' AND deadline &gt;= today</span></span></div>
+            <div class="flow-row"><span class="flow-label fl-data">DB</span><span class="flow-val">SELECT from vacancies table <span class="file">→ no auth required (permitAll in SecurityConfig)</span></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-action">Scroll through job cards — point out blue company name, job description preview, deadline</div>
+          <div class="step-say">"Company name is highlighted in blue so candidates immediately know who is hiring. The description is clipped to 2 lines — click to expand."</div>
+          <div class="tech-flow">
+            <div class="tech-flow-title">Rendering detail</div>
+            <div class="flow-row"><span class="flow-label fl-component">Component</span><span class="flow-val">LandingPage.jsx line 385 <span class="file">— style color:#2563eb on company name &lt;p&gt;</span></span></div>
+            <div class="flow-row"><span class="flow-label fl-component">Component</span><span class="flow-val">jobDescription clamped <span class="file">— WebkitLineClamp:2, overflow:hidden</span></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-action">Click "Apply Now" on any card — not logged in</div>
+          <div class="step-say">"Unauthenticated users can browse but can't apply. Clicking Apply Now redirects them to login — no dead ends."</div>
+          <div class="tech-flow">
+            <div class="tech-flow-title">What happens</div>
+            <div class="flow-row"><span class="flow-label fl-component">Component</span><span class="flow-val">LandingPage.jsx — handleApplyClick() <span class="file">line 287</span></span></div>
+            <div class="flow-row"><span class="flow-label fl-service">Logic</span><span class="flow-val">if (!isLoggedInCandidate) navigate('/login') <span class="file">— checks localStorage.role</span></span></div>
+            <div class="flow-row"><span class="flow-label fl-api">No API</span><span class="flow-val">Pure client-side redirect — no network call</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2 -->
+    <section class="section" id="s2">
+      <div class="section-header">
+        <div class="section-num">2</div>
+        <div class="section-title">Candidate: Apply for a Job</div>
+        <div class="section-time">5 min</div>
+      </div>
+      <div class="info-box">Login as <strong>nisha@demo.com</strong> / Test@1234 → navigate to <strong>/candidate/jobs</strong></div>
+
+      <div class="subsection">
+        <div class="subsection-title">2a — Login flow</div>
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-action">Go to http://localhost:5173/login — enter email + password + select CANDIDATE role → click Login</div>
+            <div class="tech-flow">
+              <div class="tech-flow-title">Full login flow</div>
+              <div class="flow-row"><span class="flow-label fl-component">Component</span><span class="flow-val">LoginPage.jsx — form submit calls api.post('/auth/login', {email, password, role})</span></div>
+              <div class="flow-row"><span class="flow-label fl-api">API</span><span class="flow-val">POST /api/auth/login <span class="file">→ AuthController.login()</span></span></div>
+              <div class="flow-row"><span class="flow-label fl-service">Service</span><span class="flow-val">AuthService.login() — BCrypt.matches(raw, hashed) <span class="file">→ JwtUtil.generateToken(email, role, userId)</span></span></div>
+              <div class="flow-row"><span class="flow-label fl-service">Service</span><span class="flow-val">AuthController.setJwtCookie(response, token) <span class="file">→ httpOnly cookie, path="/", maxAge=86400</span></span></div>
+              <div class="flow-row"><span class="flow-label fl-data">Response</span><span class="flow-val">Returns {role, userId, name, orgName} <span class="file">— token stays in cookie, NOT localStorage</span></span></div>
+              <div class="flow-row"><span class="flow-label fl-component">Component</span><span class="flow-val">LoginPage stores role/userId/name in localStorage → navigate('/candidate/dashboard')</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <div class="subsection-title">2b — Browse &amp; detail modal</div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-action">Click "Apply" on <strong>AWS Trainee Engineer</strong> (CloudEdge, Pune) — job detail modal opens</div>
+            <div class="step-say">"Candidates read the full job description before committing to apply — location, salary, qualifications, experience required, full JD. Reduces mismatched applications."</div>
+            <div class="tech-flow">
+              <div class="tech-flow-title">What happens</div>
+              <div class="flow-row"><span class="flow-label fl-component">Component</span><span class="flow-val">JobSearchPage.jsx — card button onClick: setDetailVacancy(v) <span class="file">line 279</span></span></div>
+              <div class="flow-row"><span class="flow-label fl-component">Component</span><span class="flow-val">Job detail modal renders with detailVacancy state <span class="file">line 293</span></span></div>
+              <div class="flow-row"><span class="flow-label fl-api">No API</span><span class="flow-val">Data already loaded from /vacancies/open on mount — no extra call</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-action">In the modal footer, click "Apply Now" → apply form modal opens</div>
+            <div class="tech-flow">
+              <div class="tech-flow-title">Modal transition</div>
+              <div class="flow-row"><span class="flow-label fl-component">Component</span><span class="flow-val">Modal footer button: setDetailVacancy(null); openModal(detailVacancy) <span class="file">line 336</span></span></div>
+              <div class="flow-row"><span class="flow-label fl-service">Logic</span><span class="flow-val">openModal() resets coverNote, resumeFile, resumeError, modalMsg state</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <div class="subsection-title">2c — Submit application with resume</div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-action">Upload a PDF resume → type a short cover note → click "Submit Application"</div>
+            <div class="step-say">"Resume is mandatory — PDF only, 5 MB max. The application is a two-step API call: first create the application record, then link the resume to it."</div>
+            <div class="tech-flow">
+              <div class="tech-flow-title">Full apply flow</div>
+              <div class="flow-row"><span class="flow-label fl-component">Component</span><span class="flow-val">JobSearchPage.jsx — handleApply() <span class="file">line 200</span></span></div>
+              <div class="flow-row"><span class="flow-label fl-api">Step 1</span><span class="flow-val">POST /api/applications {vacancyId, coverNote} <span class="file">→ ApplicationController.apply()</span></span></div>
+              <div class="flow-row"><span class="flow-label fl-service">Service</span><span class="flow-val">ApplicationService.apply() — checks duplicates via existsByVacancy_VacancyIdAndCandidate… <span class="file">throws if exists</span></span></div>
+              <div class="flow-row"><span class="flow-label fl-service">Service</span><span class="flow-val">Saves Application entity with status='Applied', appliedAt=now()</span></div>
+              <div class="flow-row"><span class="flow-label fl-api">Step 2</span><span class="flow-val">POST /api/applications/{id}/resume multipart/form-data <span class="file">→ ResumeController.upload()</span></span></div>
+              <div class="flow-row"><span class="flow-label fl-service">Service</span><span class="flow-val">ResumeController validates content-type=application/pdf, saves file as {appId}_{filename} in backend/uploads/</span></div>
+              <div class="flow-row"><span class="flow-label fl-data">DB</span><span class="flow-val">UPDATE applications SET resume_path='{appId}_{filename}' WHERE application_id={id}</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <div class="subsection-title">2d — Applied jobs sink to bottom</div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <div class="step-action">Stay on Job Search — AWS Trainee now shows "Applied ✓" and has moved to the bottom of the list</div>
+            <div class="step-say">"Applied jobs de-prioritise automatically so unapplied ones stay visible. The applied state persists across page reloads."</div>
+            <div class="tech-flow">
+              <div class="tech-flow-title">Sorting logic</div>
+              <div class="flow-row"><span class="flow-label fl-component">Component</span><span class="flow-val">JobSearchPage.jsx — filtered.sort() <span class="file">line 163</span></span></div>
+              <div class="flow-row"><span class="flow-label fl-service">Logic</span><span class="flow-val">appliedIds.has(a.vacancyId) ? 1 : 0 — applied cards get sort weight 1, others 0</span></div>
+              <div class="flow-row"><span class="flow-label fl-api">On mount</span><span class="flow-val">GET /api/applications/my → setAppliedIds(new Set(r.data.map(a=&gt;a.vacancyId))) <span class="file">line 152</span></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3 -->
+    <section class="section" id="s3">
+      <div class="section-header">
+        <div class="section-num">3</div>
+        <div class="section-title">Employer Workflow — The Core Demo</div>
+        <div class="section-time">12 min</div>
+      </div>
+      <div class="info-box">Logout → go to <strong>http://localhost:5173/employer/login</strong> → login as <strong>hr@technova.com</strong> / Test@1234</div>
+
+      <div class="subsection">
+        <div class="subsection-title">3a — Vacancy Management (2 min)</div>
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-action">Click "Vacancies" → show 7 open positions → click Edit on <strong>Senior Java Backend Developer</strong></div>
+            <div class="step-say">"Rich job descriptions are stored as unlimited TEXT in MySQL. This is exactly what candidates see before they apply."</div>
+            <div class="tech-flow">
+              <div class="tech-flow-title">Data flow</div>
+              <div class="flow-row"><span class="flow-label fl-component">Component</span><span class="flow-val">VacancyManagementPage.jsx — loadVacancies() on mount</span></div>
+              <div class="flow-row"><span class="flow-label fl-api">API</span><span class="flow-val">GET /api/employer/vacancies <span class="file">→ VacancyController.getEmployerVacancies() — filtered by employer from JWT</span></span></div>
+              <div class="flow-row"><span class="flow-label fl-service">Entity</span><span class="flow-val">Vacancy.java — @Column(columnDefinition="TEXT") on jobDescription <span class="file">— no length limit</span></span></div>
+              <div class="flow-row"><span class="flow-label fl-service">Scheduler</span><span class="flow-val">VacancyExpiryScheduler.java — @Scheduled(cron="0 0 0 * * *") auto-closes past-deadline vacancies nightly</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-action">Close the Edit form without saving</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <div class="subsection-title">3b — Applications: 8 applicants, every status (8 min)</div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-action">Click "Applications" → select <strong>Senior Java Backend Developer</strong> from the vacancy filter</div>
+            <div class="step-say">"This one vacancy has 8 applicants — every status in the lifecycle is represented here so you can see the full flow."</div>
+            <div class="tech-flow">
+              <div class="tech-flow-title">Data loading</div>
+              <div class="flow-row"><span class="flow-label fl-component">Component</span><span class="flow-val">ApplicationsPage.jsx — loadAll() <span class="file">line ~60</span></span></div>
+              <div class="flow-row"><span class="flow-label fl-api">API 1</span><span class="flow-val">GET /api/employer/vacancies <span class="file">→ fills vacancy dropdown</span></span></div>
+              <div class="flow-row"><span class="flow-label fl-api">API 2</span><span class="flow-val">GET /api/employer/applications?vacancyId={X} <span class="file">→ ApplicationController.getVacancyApplications()</span></span></div>
+              <div class="flow-row"><span class="flow-label fl-service">Security</span><span class="flow-val">Service verifies vacancy belongs to this employer — prevents IDOR cross-employer access</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-action">Walk the left panel — click each card and narrate the right panel</div>
+            <table class="status-table">
+              <thead><tr><th>Click this card</th><th>Status</th><th>AI Score</th><th>Say this</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Amit Kulkarni</strong></td><td><span class="status-badge s-interview">Interview Scheduled</span></td><td>95</td><td>"Highest AI score. Interview already in calendar."</td></tr>
+                <tr><td><strong>Priya Sharma</strong></td><td><span class="status-badge s-selected">Selected</span></td><td>91</td><td>"AI correctly ranked her second. Hired."</td></tr>
+                <tr><td><strong>Rahul Mehta</strong></td><td><span class="status-badge s-completed">Interview Completed</span></td><td>78</td><td>"Interview done — remarks show struggles with Java specifics."</td></tr>
+                <tr><td><strong>Vikram Singh</strong></td><td><span class="status-badge s-shortlisted">Shortlisted</span></td><td>73</td><td>"Shortlisted for discussion — will schedule interview next."</td></tr>
+                <tr><td><strong>Arun Nambiar</strong></td><td><span class="status-badge s-rejected">Rejected</span></td><td>85</td><td>"Score 85 but rejected — salary expectation exceeded budget. AI is a guide, not the decision."</td></tr>
+                <tr><td><strong>Deepa Krishnan</strong></td><td><span class="status-badge s-applied">Applied</span></td><td>28</td><td>"Fresher applying for a senior role. AI correctly flagged low match."</td></tr>
+                <tr><td><strong>Anita Rao</strong></td><td><span class="status-badge s-withdrawn">Withdrawn</span></td><td>—</td><td>"Candidate withdrew — acknowledged it was a mismatch."</td></tr>
+                <tr><td><strong>Sneha Joshi</strong></td><td><span class="status-badge s-applied">Applied</span></td><td>55</td><td>"Will shortlist her live in step 3c."</td></tr>
+              </tbody>
+            </table>
+            <div class="tech-flow">
+              <div class="tech-flow-title">Two-panel layout</div>
+              <div class="flow-row"><span class="flow-label fl-component">Component</span><span class="flow-val">ApplicationsPage.jsx — col-lg-5 card list / col-lg-7 detail panel</span></div>
+              <div class="flow-row"><span class="flow-label fl-service">Logic</span><span class="flow-val">selectedApp state drives right panel — click sets setSelectedApp(app)</span></div>
+              <div class="flow-row"><span class="flow-label fl-service">Why</span><span class="flow-val">Tables force horizontal scroll, can't show deep detail. Two-panel = same UX as Gmail/Jira</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <div class="step-action">With Amit Kulkarni selected — point out in the right panel: blue AI summary callout, cover note, Resume download button → click it → PDF opens</div>
+            <div class="step-say">"Everything in one panel — AI summary, cover note, resume, and all actions. No page navigation needed."</div>
+            <div class="tech-flow">
+              <div class="tech-flow-title">Resume download</div>
+              <div class="flow-row"><span class="flow-label fl-component">Component</span><span class="flow-val">ApplicationsPage.jsx line 335 — &lt;a href="http://localhost:8080/api/resumes/{path}"&gt;</span></div>
+              <div class="flow-row"><span class="flow-label fl-api">API</span><span class="flow-val">GET /api/resumes/{filename} <span class="file">→ ResumeController.serveResume()</span></span></div>
+              <div class="flow-row"><span class="flow-label fl-service">Security</span><span class="flow-val">Path.normalize() strips traversal sequences — prevents ../../etc/passwd attacks</span></div>
+              <div class="flow-row"><span class="flow-label fl-data">File</span><span class="flow-val">Served from backend/uploads/{applicationId}_{originalFilename}.pdf</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <div class="subsection-title">3c — Live status update + notification (1 min)</div>
+        <div class="step">
+          <div class="step-num">6</div>
+          <div class="step-body">
+            <div class="step-action">Click <strong>Sneha Joshi</strong> (Applied, score 55) → in the right panel, click the "→ Shortlisted" pill</div>
+            <div class="step-say">"One click updates the status and instantly notifies the candidate — both in-app and by email if configured."</div>
+            <div class="tech-flow">
+              <div class="tech-flow-title">Status update flow</div>
+              <div class="flow-row"><span class="flow-label fl-component">Component</span><span class="flow-val">ApplicationsPage.jsx — handleStatusChange(appId, status) <span class="file">— optimistic UI update first</span></span></div>
+              <div class="flow-row"><span class="flow-label fl-api">API</span><span class="flow-val">PATCH /api/employer/applications/{id}/status {status:'Shortlisted'} <span class="file">→ ApplicationController.updateStatus()</span></span></div>
+              <div class="flow-row"><span class="flow-label fl-service">Service</span><span class="flow-val">ApplicationService.updateStatus() — saves new status → calls notificationService.notify()</span></div>
+              <div class="flow-row"><span class="flow-label fl-service">Notification</span><span class="flow-val">NotificationService.notify() — always saves to notifications table first → then sendEmail() (fails silently)</span></div>
+              <div class="flow-row"><span class="flow-label fl-data">DB</span><span class="flow-val">UPDATE applications SET status='Shortlisted' + INSERT into notifications</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <div class="subsection-title">3d — Schedule Interview (1 min)</div>
+        <div class="step">
+          <div class="step-num">7</div>
+          <div class="step-body">
+            <div class="step-action">Click <strong>Vikram Singh</strong> (Shortlisted) → fill Schedule Interview form: date = tomorrow, Mode = Online, Interviewer = "Arjun Kapoor" → click Confirm Schedule</div>
+            <div class="step-say">"Scheduling auto-updates the status to 'Interview Scheduled' and notifies the candidate with the date, mode, venue, and interviewer details in the notification."</div>
+            <div class="tech-flow">
+              <div class="tech-flow-title">Interview scheduling flow</div>
+              <div class="flow-row"><span class="flow-label fl-component">Component</span><span class="flow-val">ApplicationsPage.jsx — handleInterviewSubmit(e) calls api.post('/employer/interviews', {...})</span></div>
+              <div class="flow-row"><span class="flow-label fl-api">API</span><span class="flow-val">POST /api/employer/interviews {applicationId, interviewDatetime, mode, venue, interviewerName}</span></div>
+              <div class="flow-row"><span class="flow-label fl-service">Service</span><span class="flow-val">InterviewService.schedule() — creates interviews row, auto-calculates roundNumber (existingCount+1)</span></div>
+              <div class="flow-row"><span class="flow-label fl-service">Service</span><span class="flow-val">Then calls applicationService.updateStatus(id, 'Interview Scheduled') which triggers notification</span></div>
+              <div class="flow-row"><span class="flow-label fl-data">DB</span><span class="flow-val">INSERT into interviews + UPDATE applications SET status='Interview Scheduled' + INSERT notification</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <div class="subsection-title">3e — AI Analysis (optional highlight)</div>
+        <div class="step">
+          <div class="step-num">8</div>
+          <div class="step-body">
+            <div class="step-action">Click "Run AI Analysis" button on the Senior Java Backend vacancy panel</div>
+            <div class="step-say">"AI scores are already seeded — point to the blue callout showing the score and plain-English summary. If the evaluator asks about AI: it sends the job description + cover note to an AI API, gets back a 1–100 score and summary."</div>
+            <div class="tech-flow">
+              <div class="tech-flow-title">AI analysis flow</div>
+              <div class="flow-row"><span class="flow-label fl-component">Component</span><span class="flow-val">ApplicationsPage.jsx — handleRunAiAnalysis() <span class="file">— only enabled when vacancy is selected</span></span></div>
+              <div class="flow-row"><span class="flow-label fl-api">API</span><span class="flow-val">POST /api/employer/vacancies/{id}/ai-analyse <span class="file">→ returns applications with aiScore + aiSummary</span></span></div>
+              <div class="flow-row"><span class="flow-label fl-data">DB</span><span class="flow-val">UPDATE applications SET ai_score, ai_summary — persisted for future views</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4 -->
+    <section class="section" id="s4">
+      <div class="section-header">
+        <div class="section-num">4</div>
+        <div class="section-title">Candidate: My Applications</div>
+        <div class="section-time">3 min</div>
+      </div>
+      <div class="info-box">Logout → login as <strong>priya@demo.com</strong> / Test@1234 → navigate to <strong>/candidate/applications</strong></div>
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-action">Show the Selected application — green "Congratulations" banner, Status Journey tracker fully lit</div>
+          <div class="step-say">"The candidate sees their full application history with a visual 5-step progress tracker. Priya's is fully lit — Applied → Shortlisted → Interview Scheduled → Interview Completed → Selected."</div>
+          <div class="tech-flow">
+            <div class="tech-flow-title">Data and rendering</div>
+            <div class="flow-row"><span class="flow-label fl-component">Component</span><span class="flow-val">MyApplicationsPage.jsx — useEffect: GET /api/applications/my</span></div>
+            <div class="flow-row"><span class="flow-label fl-api">API</span><span class="flow-val">GET /api/applications/my <span class="file">→ ApplicationController.getCandidateApplications() — email from JWT</span></span></div>
+            <div class="flow-row"><span class="flow-label fl-service">DTO</span><span class="flow-val">ApplicationResponse includes: vacancyTitle, employerName, employerId, status, aiScore, aiSummary, coverNote, resumePath</span></div>
+            <div class="flow-row"><span class="flow-label fl-component">Component</span><span class="flow-val">StatusJourney — 5-step visual tracker, step lit if status has passed that stage</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-action">Show the Report button — 🚩 Report Employer</div>
+          <div class="step-say">"The Report button appears only here — only after the candidate has applied and had an experience with the employer. We deliberately don't show it on the job search page because someone who hasn't interacted has no basis for a report."</div>
+          <div class="tech-flow">
+            <div class="tech-flow-title">Report flow</div>
+            <div class="flow-row"><span class="flow-label fl-component">Component</span><span class="flow-val">MyApplicationsPage.jsx — button renders only if employerId is truthy <span class="file">line ~200</span></span></div>
+            <div class="flow-row"><span class="flow-label fl-service">DTO</span><span class="flow-val">employerId set in ApplicationService.toResponse(): app.getVacancy().getEmployer().getEmployerId()</span></div>
+            <div class="flow-row"><span class="flow-label fl-api">If submitted</span><span class="flow-val">POST /api/reports/employer/{employerId} {reason:'[Rating:X/5] [Issue:Y] ...'}</span></div>
+            <div class="flow-row"><span class="flow-label fl-data">DB</span><span class="flow-val">INSERT into reports — visible to admin in dashboard</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-action">Show notifications bell → click it to show notifications list for Priya</div>
+          <div class="tech-flow">
+            <div class="tech-flow-title">Notifications</div>
+            <div class="flow-row"><span class="flow-label fl-api">API</span><span class="flow-val">GET /api/notifications <span class="file">→ NotificationService.getNotifications() — findByRecipientEmailOrderBySentAtDesc</span></span></div>
+            <div class="flow-row"><span class="flow-label fl-data">DB</span><span class="flow-val">SELECT from notifications WHERE recipient_email=priya@demo.com ORDER BY sent_at DESC</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5 -->
+    <section class="section" id="s5">
+      <div class="section-header">
+        <div class="section-num">5</div>
+        <div class="section-title">Admin Dashboard</div>
+        <div class="section-time">2 min</div>
+      </div>
+      <div class="info-box">Logout → go to <strong>http://localhost:5173/admin/login</strong> → login as <strong>admin@recpro.com</strong> / Test@1234</div>
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-action">Show Employers list — Active/Inactive pills, 5 employers listed</div>
+          <div class="step-say">"The admin sees all employers across the platform. Any newly registered employer needs admin approval before they can post vacancies."</div>
+          <div class="tech-flow">
+            <div class="tech-flow-title">Data flow</div>
+            <div class="flow-row"><span class="flow-label fl-api">API</span><span class="flow-val">GET /api/admin/employers <span class="file">→ AdminController — ROLE_ADMIN secured</span></span></div>
+            <div class="flow-row"><span class="flow-label fl-service">Approval</span><span class="flow-val">PATCH /api/admin/employers/{id}/activate — sets employer.isActive=true</span></div>
+            <div class="flow-row"><span class="flow-label fl-service">Auth check</span><span class="flow-val">AuthService.login() line 82: if (!employer.isActive) throw "Account pending admin approval"</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-action">Show Candidates list → show any report bell icon if visible → show deactivate option</div>
+          <div class="step-say">"Reports filed by candidates against employers land here. The admin can review and deactivate accounts if needed."</div>
+          <div class="tech-flow">
+            <div class="tech-flow-title">Admin role design</div>
+            <div class="flow-row"><span class="flow-label fl-service">Why same table</span><span class="flow-val">Admin stored in candidates table with role='ADMIN' — avoids one-row admin table, role column distinguishes type</span></div>
+            <div class="flow-row"><span class="flow-label fl-service">JWT scope</span><span class="flow-val">AuthService.login() checks role=="ADMIN" and issues admin-scoped JWT</span></div>
+            <div class="flow-row"><span class="flow-label fl-api">Deactivate</span><span class="flow-val">PATCH /api/admin/employers/{id}/deactivate — sets isActive=false → employer login blocked</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 6 -->
+    <section class="section" id="s6">
+      <div class="section-header">
+        <div class="section-num">6</div>
+        <div class="section-title">Security — Only if Asked</div>
+        <div class="section-time">1 min</div>
+      </div>
+      <div class="subsection">
+        <div class="subsection-title">JWT Authentication</div>
+        <div class="tech-flow">
+          <div class="flow-row"><span class="flow-label fl-service">Token gen</span><span class="flow-val">JwtUtil.generateToken(email, role, userId) — HMAC-SHA signed, 24hr expiry</span></div>
+          <div class="flow-row"><span class="flow-label fl-service">Storage</span><span class="flow-val">Token in httpOnly cookie — cannot be read by JavaScript — XSS-safe</span></div>
+          <div class="flow-row"><span class="flow-label fl-service">Filter</span><span class="flow-val">JwtAuthFilter intercepts every request — reads cookie "jwt" first, falls back to Authorization header</span></div>
+          <div class="flow-row"><span class="flow-label fl-service">Principal</span><span class="flow-val">Sets SecurityContextHolder with UsernamePasswordAuthenticationToken(email, null, [ROLE_X])</span></div>
+        </div>
+      </div>
+      <div class="subsection">
+        <div class="subsection-title">Route Protection</div>
+        <div class="tech-flow">
+          <div class="flow-row"><span class="flow-label fl-component">Frontend</span><span class="flow-val">ProtectedRoute in App.jsx — reads role from localStorage, redirects wrong-role users</span></div>
+          <div class="flow-row"><span class="flow-label fl-service">Backend</span><span class="flow-val">SecurityConfig — hasRole('EMPLOYER') on employer endpoints, hasRole('CANDIDATE') on candidate endpoints</span></div>
+          <div class="flow-row"><span class="flow-label fl-service">IDOR prev.</span><span class="flow-val">Service layer checks ownership — employer cannot access another employer's applications</span></div>
+          <div class="flow-row"><span class="flow-label fl-service">Why JWT</span><span class="flow-val">Stateless — no server-side session store, scales horizontally without sticky sessions</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RESET -->
+    <section class="section" id="reset">
+      <div class="section-header">
+        <div style="font-size:22px;">🔄</div>
+        <div class="section-title">Reset Demo Data</div>
+      </div>
+      <div class="danger-box">If the demo breaks or data gets messy, run this in a terminal and restart the backend:</div>
+      <div class="reset-cmd">mysql -u root recruitment_db &lt; docs/seed-demo.sql</div>
+      <div style="margin-top:12px;font-size:13px;color:var(--muted);">Truncates all tables and reloads all 5 employers, 10 candidates, 25 vacancies, 14 applications, 4 interviews, all resumes.</div>
+    </section>
+
+    <!-- Q&A -->
+    <section class="section" id="qa">
+      <div class="section-header">
+        <div style="font-size:22px;">❓</div>
+        <div class="section-title">Likely Questions — 30-Second Answers</div>
+      </div>
+      <div class="qa">
+        <div class="qa-q">Why Spring Boot and not Node.js or Django?</div>
+        <div class="qa-a">Strong typing, built-in Spring Security, JPA ORM, production-ready starters, and Java 21 virtual threads for concurrency. Right choice for an enterprise data-heavy system where type safety matters.</div>
+      </div>
+      <div class="qa">
+        <div class="qa-q">Why MySQL and not PostgreSQL or MongoDB?</div>
+        <div class="qa-a">Recruitment data is highly relational — candidates, vacancies, applications, interviews all reference each other with foreign keys. ACID transactions matter. MySQL 8 handles all our query patterns well.</div>
+      </div>
+      <div class="qa">
+        <div class="qa-q">Why two-panel layout on Applications page instead of a table?</div>
+        <div class="qa-a">Tables force horizontal scrolling and can only show a few columns. Two-panel shows the full application detail — resume, cover note, AI summary, all actions — without leaving the page. Same pattern as Gmail, Jira, Outlook.</div>
+      </div>
+      <div class="qa">
+        <div class="qa-q">What does the AI actually do?</div>
+        <div class="qa-a">Sends the job description + candidate's cover note to an AI API, gets back a 1–100 score and plain-English summary. Both are stored on the applications table and shown in the blue callout. Fully automated — no manual scoring.</div>
+      </div>
+      <div class="qa">
+        <div class="qa-q">What prevents double-applying?</div>
+        <div class="qa-a">ApplicationService.apply() queries existsByVacancy_VacancyIdAndCandidate_CandidateIdAndStatusNot(vacancyId, candidateId, "Withdrawn") — throws an error if a non-withdrawn application already exists.</div>
+      </div>
+      <div class="qa">
+        <div class="qa-q">What is the 3-month re-apply cooldown?</div>
+        <div class="qa-a">After a candidate withdraws, withdrawnAt.plusMonths(3) is compared to now() in apply(). Prevents candidates from gaming the system by applying, withdrawing, and applying again to game the AI score.</div>
+      </div>
+      <div class="qa">
+        <div class="qa-q">Is the JWT stored in localStorage? Isn't that insecure?</div>
+        <div class="qa-a">No — the JWT token is in an httpOnly cookie, which JavaScript cannot read, making it XSS-safe. Only non-sensitive metadata (role, userId, name) is in localStorage. The JwtAuthFilter reads the cookie on every request.</div>
+      </div>
+      <div class="qa">
+        <div class="qa-q">How does the notification system work?</div>
+        <div class="qa-a">NotificationService.notify() always saves to the notifications table first, then attempts sendEmail() — which fails silently if no mail server is configured. In-app notifications always work; email is optional.</div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  // Highlight active sidebar link on scroll
+  const sections = document.querySelectorAll('section[id]');
+  const links = document.querySelectorAll('.sidebar a');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => { if (window.scrollY >= s.offsetTop - 80) current = s.id; });
+    links.forEach(l => {
+      l.classList.toggle('active', l.getAttribute('href') === '#' + current);
+    });
+  });
+</script>
+</body>
+</html>

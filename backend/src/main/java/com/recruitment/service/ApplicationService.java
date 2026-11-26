@@ -186,6 +186,7 @@ public class ApplicationService {
         r.setVacancyId(app.getVacancy().getVacancyId());
         r.setVacancyTitle(app.getVacancy().getDesignation());
         r.setEmployerOrgName(app.getVacancy().getEmployer().getOrgName());
+        r.setEmployerId(app.getVacancy().getEmployer().getEmployerId());
         r.setCandidateId(app.getCandidate().getCandidateId());
         r.setCandidateName(app.getCandidate().getFullName());
         r.setAppliedAt(app.getAppliedAt() != null ? app.getAppliedAt().toString() : null);

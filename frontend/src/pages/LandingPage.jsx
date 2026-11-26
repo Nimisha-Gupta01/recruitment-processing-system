@@ -139,7 +139,7 @@ function ReportModal({ vacancy, onClose }) {
           <div className="modal-header border-0 pb-0">
             <div>
               <h5 className="modal-title fw-bold mb-0">Report Employer</h5>
-              <p className="text-muted small mb-0">{vacancy.employerOrgName} · {vacancy.designation}</p>
+              <p className="text-muted small mb-0">{vacancy.orgName || vacancy.employerOrgName} · {vacancy.designation}</p>
             </div>
             <button type="button" className="btn-close" onClick={onClose} />
           </div>
@@ -236,6 +236,7 @@ export default function LandingPage() {
   const [appliedIds, setAppliedIds] = useState(new Set())
   const [modal, setModal] = useState(null)
   const [reportModal, setReportModal] = useState(null)
+  const [detailVacancy, setDetailVacancy] = useState(null)
   const [stats, setStats] = useState({ openings: 3, companies: 2, candidates: 5 })
 
   useEffect(() => {
@@ -243,8 +244,7 @@ export default function LandingPage() {
     api.get('/vacancies/open')
       .then(r => {
         setVacancies(r.data)
-        // Derive stats from real data if endpoint returns them
-        const uniqueCompanies = new Set(r.data.map(v => v.employerOrgName)).size
+        const uniqueCompanies = new Set(r.data.map(v => v.orgName || v.employerOrgName)).size
         setStats(s => ({ ...s, openings: r.data.length, companies: uniqueCompanies || s.companies }))
       })
       .catch(() => {
@@ -254,6 +254,12 @@ export default function LandingPage() {
           { vacancyId: 3, designation: 'Data Analyst', employerOrgName: 'DataWorks', location: 'Pune', salaryMin: 500000, salaryMax: 900000, applicationDeadline: '2026-12-01' },
         ])
       })
+    // Load already-applied vacancy IDs so Report button and Applied state persist on reload
+    if (isLoggedInCandidate) {
+      api.get('/applications/my')
+        .then(r => setAppliedIds(new Set(r.data.map(a => a.vacancyId))))
+        .catch(() => {})
+    }
   }, [])
 
   // Try to fetch candidate count from backend stats endpoint
@@ -267,10 +273,16 @@ export default function LandingPage() {
       .catch(() => { /* use static fallback */ })
   }, [])
 
-  const filtered = vacancies.filter(v => {
-    if (locationFilter && !v.location.toLowerCase().includes(locationFilter.toLowerCase())) return false
-    return true
-  })
+  const filtered = vacancies
+    .filter(v => {
+      if (locationFilter && !v.location.toLowerCase().includes(locationFilter.toLowerCase())) return false
+      return true
+    })
+    .sort((a, b) => {
+      const aApplied = isLoggedInCandidate && appliedIds.has(a.vacancyId) ? 1 : 0
+      const bApplied = isLoggedInCandidate && appliedIds.has(b.vacancyId) ? 1 : 0
+      return aApplied - bApplied
+    })
 
   function handleApplyClick(vacancy) {
     if (!isLoggedInCandidate) {
@@ -367,28 +379,26 @@ export default function LandingPage() {
         <div className="row g-4">
           {filtered.map(v => (
             <div className="col-md-4" key={v.vacancyId}>
-              <div className="card h-100 shadow-sm">
-                <div className="card-body">
-                  <h5 className="card-title">{v.designation}</h5>
-                  <p className="card-text text-muted mb-1">{v.employerOrgName}</p>
+              <div className="card h-100 shadow-sm d-flex flex-column">
+                <div className="card-body flex-grow-1">
+                  <h5 className="card-title fw-bold mb-1">{v.designation}</h5>
+                  <p className="card-text mb-2 fw-semibold" style={{ color: '#2563eb', fontSize: 14 }}>{v.orgName || v.employerOrgName}</p>
                   <p className="card-text mb-1"><small>📍 {v.location}</small></p>
                   <p className="card-text mb-1"><small>💰 {formatSalary(v.salaryMin)} – {formatSalary(v.salaryMax)}</small></p>
-                  <p className="card-text"><small>Deadline: {v.applicationDeadline}</small></p>
+                  <p className="card-text mb-2"><small>🗓 Deadline: {v.applicationDeadline}</small></p>
+                  {v.jobDescription && (
+                    <p className="card-text text-muted small mb-0" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {v.jobDescription}
+                    </p>
+                  )}
                 </div>
-                <div className="card-footer d-flex gap-2">
+                <div className="card-footer d-flex gap-2 flex-wrap">
                   <button
                     className="btn btn-primary btn-sm flex-grow-1"
-                    onClick={() => handleApplyClick(v)}
+                    onClick={() => isLoggedInCandidate && appliedIds.has(v.vacancyId) ? null : (isLoggedInCandidate ? setDetailVacancy(v) : navigate('/login'))}
                     disabled={isLoggedInCandidate && appliedIds.has(v.vacancyId)}
                   >
-                    {isLoggedInCandidate && appliedIds.has(v.vacancyId) ? 'Applied' : 'Apply Now'}
-                  </button>
-                  <button
-                    className="btn btn-outline-danger btn-sm"
-                    title="Report this vacancy"
-                    onClick={() => isLoggedInCandidate ? setReportModal(v) : navigate('/login')}
-                  >
-                    Report
+                    {isLoggedInCandidate && appliedIds.has(v.vacancyId) ? 'Applied ✓' : 'Apply Now'}
                   </button>
                 </div>
               </div>
@@ -399,6 +409,61 @@ export default function LandingPage() {
           )}
         </div>
       </div>
+
+      {/* Job Detail Modal */}
+      {detailVacancy && (
+        <div className="modal d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => setDetailVacancy(null)}>
+          <div className="modal-dialog modal-lg modal-dialog-scrollable" onClick={e => e.stopPropagation()}>
+            <div className="modal-content">
+              <div className="modal-header" style={{ background: '#0f172a', color: '#fff' }}>
+                <div>
+                  <h5 className="modal-title fw-bold mb-0">{detailVacancy.designation}</h5>
+                  <p className="mb-0 fw-semibold" style={{ color: '#60a5fa', fontSize: 15 }}>{detailVacancy.orgName || detailVacancy.employerOrgName}</p>
+                </div>
+                <button className="btn-close btn-close-white" onClick={() => setDetailVacancy(null)} />
+              </div>
+              <div className="modal-body">
+                <div className="row g-3 mb-4">
+                  {[
+                    ['📍 Location', detailVacancy.location],
+                    ['💰 Salary', `${formatSalary(detailVacancy.salaryMin)} – ${formatSalary(detailVacancy.salaryMax)}`],
+                    ['🗓 Deadline', detailVacancy.applicationDeadline],
+                    ['🏢 Employment Type', detailVacancy.employmentType],
+                    ['🎓 Qualification', detailVacancy.requiredQual],
+                    ['⏳ Experience', `${detailVacancy.requiredExpYrs} yr(s)`],
+                    ['👥 Openings', detailVacancy.numOpenings],
+                    ['🏬 Department', detailVacancy.department],
+                  ].filter(([, v]) => v).map(([label, value]) => (
+                    <div className="col-md-6" key={label}>
+                      <div className="text-muted small">{label}</div>
+                      <div className="fw-semibold">{value}</div>
+                    </div>
+                  ))}
+                </div>
+                {detailVacancy.jobDescription && (
+                  <>
+                    <hr />
+                    <h6 className="fw-bold mb-3">Job Description</h6>
+                    <div style={{ whiteSpace: 'pre-wrap', fontSize: 14, lineHeight: 1.8, color: '#374151' }}>
+                      {detailVacancy.jobDescription}
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setDetailVacancy(null)}>Close</button>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => { setDetailVacancy(null); handleApplyClick(detailVacancy) }}
+                  disabled={isLoggedInCandidate && appliedIds.has(detailVacancy.vacancyId)}
+                >
+                  {isLoggedInCandidate && appliedIds.has(detailVacancy.vacancyId) ? 'Already Applied' : 'Apply Now'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Apply Modal */}
       {modal && (

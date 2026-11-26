@@ -24,7 +24,8 @@ export default function LoginPage() {
       localStorage.setItem('name', data.name)
       navigate('/candidate/dashboard')
     } catch (err) {
-      const msg = err.response?.data?.message || err.response?.data || 'Invalid credentials'
+      const _d = err.response?.data
+      const msg = typeof _d === 'string' ? _d : (_d?.message || _d?.error || 'Invalid credentials')
       setError(typeof msg === 'string' ? msg : 'Invalid credentials')
     }
   }

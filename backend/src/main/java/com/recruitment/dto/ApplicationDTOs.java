@@ -17,6 +17,7 @@ public class ApplicationDTOs {
         private Integer vacancyId;
         private String vacancyTitle;
         private String employerOrgName;
+        private Integer employerId;
         private Integer candidateId;
         private String candidateName;
         private String appliedAt;
@@ -34,6 +35,8 @@ public class ApplicationDTOs {
         public void setVacancyTitle(String vacancyTitle) { this.vacancyTitle = vacancyTitle; }
         public String getEmployerOrgName() { return employerOrgName; }
         public void setEmployerOrgName(String employerOrgName) { this.employerOrgName = employerOrgName; }
+        public Integer getEmployerId() { return employerId; }
+        public void setEmployerId(Integer employerId) { this.employerId = employerId; }
         public Integer getCandidateId() { return candidateId; }
         public void setCandidateId(Integer candidateId) { this.candidateId = candidateId; }
         public String getCandidateName() { return candidateName; }

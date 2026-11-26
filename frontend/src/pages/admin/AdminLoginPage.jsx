@@ -19,7 +19,9 @@ export default function AdminLoginPage() {
       localStorage.setItem('name', res.data.name)
       navigate('/admin/dashboard', { replace: true })
     } catch (err) {
-      setError(err.response?.data?.message || err.response?.data || 'Invalid credentials')
+      const raw = err.response?.data
+      const msg = typeof raw === 'string' ? raw : (raw?.message || raw?.error || 'Invalid credentials')
+      setError(msg)
     } finally {
       setLoading(false)
     }

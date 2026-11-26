@@ -279,60 +279,64 @@ export default function AdminDashboard() {
         </ul>
 
         {tab === 'employers' && (
-          <table className="table table-bordered table-hover">
-            <thead className="table-dark">
-              <tr><th>ID</th><th>Organisation</th><th>Email</th><th>Status</th><th>Reports</th><th>Action</th></tr>
-            </thead>
-            <tbody>
-              {employers.map(e => (
-                <tr key={e.id}>
-                  <td>{e.id}</td>
-                  <td>{e.orgName}</td>
-                  <td>{e.email}</td>
-                  <td>
-                    <span className={`badge bg-${e.active ? 'success' : 'warning text-dark'}`}>
-                      {e.active ? 'Active' : 'Pending'}
-                    </span>
-                  </td>
-                  <td>
-                    <ReportBell count={e.reportCount} onClick={() => setSelectedEmployer(e)} />
-                  </td>
-                  <td>
-                    <button className="btn btn-sm btn-outline-primary" onClick={() => setSelectedEmployer(e)}>
-                      View
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="d-flex flex-column gap-2">
+            {employers.map(e => (
+              <div key={e.id} className="card shadow-sm" style={{ borderRadius: 10, border: '1px solid #e5e7eb' }}>
+                <div className="card-body py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
+                  <div>
+                    <div className="fw-bold">{e.orgName}</div>
+                    <div className="text-muted small">{e.email}</div>
+                    <div className="mt-1 d-flex gap-2 align-items-center">
+                      <span style={{
+                        background: e.active ? '#f0fdf4' : '#fffbeb',
+                        color: e.active ? '#16a34a' : '#d97706',
+                        border: `1px solid ${e.active ? '#bbf7d0' : '#fde68a'}`,
+                        borderRadius: 20, padding: '2px 10px', fontSize: 12, fontWeight: 600,
+                      }}>
+                        {e.active ? 'Active' : 'Pending'}
+                      </span>
+                      {e.reportCount > 0 && (
+                        <ReportBell count={e.reportCount} onClick={() => setSelectedEmployer(e)} />
+                      )}
+                    </div>
+                  </div>
+                  <button className="btn btn-sm btn-outline-primary" onClick={() => setSelectedEmployer(e)}>View</button>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
 
         {tab === 'candidates' && (
-          <table className="table table-bordered table-hover">
-            <thead className="table-dark">
-              <tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Reports</th><th>Action</th></tr>
-            </thead>
-            <tbody>
-              {candidates.map(c => (
-                <tr key={c.id}>
-                  <td>{c.id}</td>
-                  <td>{c.name}</td>
-                  <td>{c.email}</td>
-                  <td><span className={`badge bg-${c.role === 'ADMIN' ? 'dark' : 'primary'}`}>{c.role}</span></td>
-                  <td><span className={`badge bg-${c.active ? 'success' : 'secondary'}`}>{c.active ? 'Active' : 'Inactive'}</span></td>
-                  <td>
-                    <ReportBell count={c.reportCount} onClick={() => setSelectedCandidate(c)} />
-                  </td>
-                  <td>
-                    <button className="btn btn-sm btn-outline-primary" onClick={() => setSelectedCandidate(c)}>
-                      View
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="d-flex flex-column gap-2">
+            {candidates.map(c => (
+              <div key={c.id} className="card shadow-sm" style={{ borderRadius: 10, border: '1px solid #e5e7eb' }}>
+                <div className="card-body py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
+                  <div>
+                    <div className="fw-bold">{c.name}</div>
+                    <div className="text-muted small">{c.email}</div>
+                    <div className="mt-1 d-flex gap-2 align-items-center">
+                      <span style={{
+                        background: c.active ? '#f0fdf4' : '#f9fafb',
+                        color: c.active ? '#16a34a' : '#6b7280',
+                        border: `1px solid ${c.active ? '#bbf7d0' : '#e5e7eb'}`,
+                        borderRadius: 20, padding: '2px 10px', fontSize: 12, fontWeight: 600,
+                      }}>
+                        {c.active ? 'Active' : 'Inactive'}
+                      </span>
+                      {c.role === 'ADMIN' && (
+                        <span style={{ background: '#1e293b', color: '#fff', borderRadius: 20, padding: '2px 10px', fontSize: 12, fontWeight: 600 }}>Admin</span>
+                      )}
+                      {c.reportCount > 0 && (
+                        <ReportBell count={c.reportCount} onClick={() => setSelectedCandidate(c)} />
+                      )}
+                    </div>
+                  </div>
+                  <button className="btn btn-sm btn-outline-primary" onClick={() => setSelectedCandidate(c)}>View</button>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 

@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RecPro — Demo Script</title>
+<style>
+  :root {
+    --navy: #0f172a; --blue: #2563eb; --blue-light: #60a5fa;
+    --green: #16a34a; --amber: #d97706; --red: #dc2626;
+    --purple: #7c3aed; --slate: #475569; --bg: #f8fafc;
+    --card: #ffffff; --border: #e2e8f0; --text: #1e293b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+
+  /* Layout */
+  #sidebar { position: fixed; top: 0; left: 0; width: 240px; height: 100vh; background: var(--navy); overflow-y: auto; padding: 16px 0; z-index: 100; }
+  #main { margin-left: 240px; padding: 24px 32px; max-width: 1000px; }
+  #topbar { background: var(--navy); color: #fff; padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; margin-left: 240px; position: sticky; top: 0; z-index: 99; }
+  #topbar .brand { font-size: 20px; font-weight: 800; color: var(--blue-light); }
+  #topbar .timer { font-size: 13px; color: #94a3b8; }
+
+  /* Sidebar nav */
+  .nav-logo { color: var(--blue-light); font-size: 18px; font-weight: 800; padding: 0 16px 16px; border-bottom: 1px solid #1e293b; margin-bottom: 8px; }
+  .nav-section { font-size: 10px; font-weight: 700; color: #64748b; letter-spacing: 1px; padding: 10px 16px 4px; text-transform: uppercase; }
+  .nav-item { display: block; padding: 8px 16px; color: #94a3b8; text-decoration: none; font-size: 13px; cursor: pointer; border-left: 3px solid transparent; transition: all 0.15s; }
+  .nav-item:hover, .nav-item.active { color: #fff; border-left-color: var(--blue-light); background: rgba(96,165,250,0.08); }
+  .nav-time { font-size: 11px; color: #475569; margin-left: 6px; }
+
+  /* Section */
+  .section { margin-bottom: 40px; scroll-margin-top: 60px; }
+  .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--border); }
+  .section-num { width: 32px; height: 32px; border-radius: 50%; background: var(--navy); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+  .section-title { font-size: 18px; font-weight: 700; color: var(--navy); }
+  .section-time { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--blue); background: #eff6ff; padding: 3px 10px; border-radius: 20px; }
+
+  /* Step cards */
+  .step { background: var(--card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 14px; overflow: hidden; }
+  .step-header { padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px; cursor: pointer; user-select: none; }
+  .step-header:hover { background: #f8fafc; }
+  .step-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .step-action { font-weight: 600; color: var(--text); font-size: 14px; }
+  .step-sub { font-size: 12px; color: var(--slate); margin-top: 2px; }
+  .step-body { padding: 0 16px 16px 46px; display: none; }
+  .step-body.open { display: block; }
+
+  /* What to say */
+  .say { background: #f0fdf4; border-left: 3px solid var(--green); padding: 10px 14px; border-radius: 0 6px 6px 0; margin: 10px 0; font-style: italic; color: #166534; font-size: 13px; }
+  .say::before { content: '🗣 SAY: '; font-style: normal; font-weight: 700; }
+
+  /* Code trace */
+  .trace { background: #0f172a; border-radius: 8px; padding: 14px; margin: 10px 0; }
+  .trace-title { color: var(--blue-light); font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 10px; }
+  .trace-row { display: flex; gap: 10px; margin-bottom: 8px; align-items: flex-start; }
+  .trace-layer { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; flex-shrink: 0; margin-top: 1px; min-width: 70px; text-align: center; }
+  .l-ui { background: #1d4ed8; color: #fff; }
+  .l-api { background: #0369a1; color: #fff; }
+  .l-ctrl { background: #0f766e; color: #fff; }
+  .l-svc { background: #7c3aed; color: #fff; }
+  .l-db { background: #b45309; color: #fff; }
+  .l-jwt { background: #dc2626; color: #fff; }
+  .trace-detail { color: #e2e8f0; font-size: 12.5px; font-family: 'Cascadia Code', 'Consolas', monospace; line-height: 1.6; }
+  .trace-detail .file { color: #94a3b8; font-size: 11px; display: block; margin-top: 1px; }
+  .trace-detail .hl { color: #fbbf24; }
+  .trace-detail .grn { color: #86efac; }
+  .trace-detail .red { color: #fca5a5; }
+
+  /* Credential badge */
+  .cred-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin: 16px 0; }
+  .cred-card { background: var(--navy); color: #fff; border-radius: 10px; padding: 14px 16px; }
+  .cred-role { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 4px; }
+  .cred-email { font-size: 13px; font-weight: 600; color: var(--blue-light); font-family: monospace; }
+  .cred-pass { font-size: 12px; color: #cbd5e1; margin-top: 2px; font-family: monospace; }
+  .cred-note { font-size: 11px; color: #64748b; margin-top: 4px; }
+
+  /* Pill tags */
+  .pill { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: 20px; margin: 2px; }
+  .pill-blue { background: #eff6ff; color: #1d4ed8; }
+  .pill-green { background: #f0fdf4; color: #166534; }
+  .pill-red { background: #fef2f2; color: #991b1b; }
+  .pill-amber { background: #fffbeb; color: #92400e; }
+  .pill-purple { background: #faf5ff; color: #6b21a8; }
+
+  /* Warning / tip */
+  .tip { background: #fffbeb; border-left: 3px solid var(--amber); padding: 9px 13px; border-radius: 0 6px 6px 0; margin: 8px 0; font-size: 12.5px; color: #78350f; }
+  .tip::before { content: '💡 '; }
+  .warn { background: #fef2f2; border-left: 3px solid var(--red); padding: 9px 13px; border-radius: 0 6px 6px 0; margin: 8px 0; font-size: 12.5px; color: #7f1d1d; }
+  .warn::before { content: '⚠️ '; }
+
+  /* Q&A */
+  .qa { margin-bottom: 10px; }
+  .qa-q { font-weight: 700; color: var(--navy); font-size: 13px; padding: 10px 14px; background: #f1f5f9; border-radius: 6px 6px 0 0; cursor: pointer; }
+  .qa-q::before { content: '❓ '; }
+  .qa-a { background: var(--card); border: 1px solid var(--border); border-top: none; padding: 12px 14px; border-radius: 0 0 6px 6px; display: none; font-size: 13px; }
+  .qa-a.open { display: block; }
+  .qa-a .trace { margin: 8px 0 0; }
+
+  /* Reset box */
+  .reset { background: #0f172a; border-radius: 8px; padding: 14px 18px; margin: 16px 0; display: flex; align-items: center; gap: 12px; }
+  .reset code { color: #86efac; font-size: 13px; font-family: monospace; flex: 1; }
+  .reset-label { color: #94a3b8; font-size: 11px; white-space: nowrap; }
+
+  /* Progress bar */
+  #progress-bar { position: fixed; top: 44px; left: 240px; right: 0; height: 3px; background: #e2e8f0; z-index: 98; }
+  #progress-fill { height: 100%; background: var(--blue-light); width: 0%; transition: width 0.3s; }
+
+  /* Checklist */
+  .checklist { list-style: none; }
+  .checklist li { padding: 6px 0; display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .checklist li::before { content: '☐'; font-size: 16px; color: var(--slate); flex-shrink: 0; }
+
+  /* Nav arrow toggle */
+  .arrow { float: right; color: #94a3b8; font-size: 11px; }
+  .open > .arrow::before { content: '▾'; }
+  .arrow::before { content: '▸'; }
+
+  h3 { font-size: 14px; font-weight: 700; color: var(--navy); margin: 14px 0 6px; }
+  p { margin: 6px 0; font-size: 13px; }
+  code { background: #f1f5f9; padding: 1px 5px; border-radius: 3px; font-family: monospace; font-size: 12px; color: #be185d; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav id="sidebar">
+  <div class="nav-logo">RecPro</div>
+  <div class="nav-section">Before You Start</div>
+  <a class="nav-item" onclick="goTo('prep')">✅ Checklist &amp; Credentials</a>
+  <div class="nav-section">Demo Flow</div>
+  <a class="nav-item" onclick="goTo('s1')">1 · Landing Page <span class="nav-time">2 min</span></a>
+  <a class="nav-item" onclick="goTo('s2')">2 · Candidate Login <span class="nav-time">1 min</span></a>
+  <a class="nav-item" onclick="goTo('s3')">3 · Apply for a Job <span class="nav-time">4 min</span></a>
+  <a class="nav-item" onclick="goTo('s4')">4 · My Applications <span class="nav-time">3 min</span></a>
+  <a class="nav-item" onclick="goTo('s5')">5 · Employer Login <span class="nav-time">1 min</span></a>
+  <a class="nav-item" onclick="goTo('s6')">6 · Vacancy Management <span class="nav-time">2 min</span></a>
+  <a class="nav-item" onclick="goTo('s7')">7 · Applications Panel <span class="nav-time">7 min</span></a>
+  <a class="nav-item" onclick="goTo('s8')">8 · Schedule Interview <span class="nav-time">2 min</span></a>
+  <a class="nav-item" onclick="goTo('s9')">9 · Admin Dashboard <span class="nav-time">2 min</span></a>
+  <div class="nav-section">Reference</div>
+  <a class="nav-item" onclick="goTo('qa')">❓ Likely Questions</a>
+  <a class="nav-item" onclick="goTo('reset')">🔄 Reset Data</a>
+</nav>
+
+<!-- Topbar -->
+<div id="topbar">
+  <span class="brand">RecPro — Demo Script</span>
+  <span class="timer">Total live demo: <strong>~25 min</strong></span>
+</div>
+<div id="progress-bar"><div id="progress-fill"></div></div>
+
+<!-- Main content -->
+<div id="main">
+
+<!-- ═══════════════════════════════════════════════════════ PREP -->
+<div class="section" id="prep">
+  <div class="section-header">
+    <div class="section-num">✅</div>
+    <div class="section-title">Before You Start — Checklist &amp; Credentials</div>
+  </div>
+
+  <div class="tip">Open this page in a separate window/tab so you can follow along while presenting.</div>
+
+  <h3>Pre-demo checklist</h3>
+  <ul class="checklist">
+    <li>Backend running: <code>cd backend && mvn spring-boot:run</code> → listening on port 8080</li>
+    <li>Frontend running: <code>cd frontend && npm run dev</code> → listening on port 5173 (or 5174)</li>
+    <li>MySQL running with seed data: <code>mysql -u root recruitment_db &lt; docs/seed-demo.sql</code></li>
+    <li>Browser open at <strong>http://localhost:5173</strong> — not logged in</li>
+    <li>Browser zoom set to 90% (more content visible)</li>
+    <li>VS Code open with the project — lecturer will ask to see code</li>
+  </ul>
+
+  <h3>All Accounts — Password for all: <code>Test@1234</code></h3>
+  <div class="cred-grid">
+    <div class="cred-card">
+      <div class="cred-role">Employer (main demo)</div>
+      <div class="cred-email">hr@technova.com</div>
+      <div class="cred-pass">Password: Test@1234</div>
+      <div class="cred-note">TechNova Solutions — 7 vacancies, 8 applicants on Java Backend role</div>
+    </div>
+    <div class="cred-card">
+      <div class="cred-role">Candidate — fresh (use for live apply)</div>
+      <div class="cred-email">nisha@demo.com</div>
+      <div class="cred-pass">Password: Test@1234</div>
+      <div class="cred-note">No prior applications — good for showing apply flow</div>
+    </div>
+    <div class="cred-card">
+      <div class="cred-role">Candidate — Selected</div>
+      <div class="cred-email">priya@demo.com</div>
+      <div class="cred-pass">Password: Test@1234</div>
+      <div class="cred-note">AI score 91, Selected status on Java Backend</div>
+    </div>
+    <div class="cred-card">
+      <div class="cred-role">Admin</div>
+      <div class="cred-email">admin@recpro.com</div>
+      <div class="cred-pass">Password: Test@1234</div>
+      <div class="cred-note">Full platform oversight — stored in candidates table with role=ADMIN</div>
+    </div>
+    <div class="cred-card">
+      <div class="cred-role">Employer 2</div>
+      <div class="cred-email">hr@infosysbpm.com</div>
+      <div class="cred-pass">Password: Test@1234</div>
+      <div class="cred-note">Infosys BPM — 5 vacancies</div>
+    </div>
+    <div class="cred-card">
+      <div class="cred-role">Employer 3</div>
+      <div class="cred-email">hr@finserv.com</div>
+      <div class="cred-pass">Password: Test@1234</div>
+      <div class="cred-note">FinServ Capital — 5 vacancies, Karan Desai has interview scheduled</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S1 -->
+<div class="section" id="s1">
+  <div class="section-header">
+    <div class="section-num">1</div>
+    <div class="section-title">Landing Page</div>
+    <div class="section-time">2 min</div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <div class="step-icon">🌐</div>
+      <div>
+        <div class="step-action">Navigate to http://localhost:5173 — not logged in</div>
+        <div class="step-sub">Public landing page, no credentials needed</div>
+      </div>
+      <span class="arrow"></span>
+    </div>
+    <div class="step-body">
+      <div class="say">This is the public landing page — anyone can browse open positions without logging in. You can see 25 openings from 5 companies right on the stats bar.</div>
+      <p>Point out: stats bar (25 openings, 5 companies), job cards with <strong>company name in blue</strong>, 2-line job description preview.</p>
+      <div class="trace">
+        <div class="trace-title">What happens when the page loads</div>
+        <div class="trace-row"><span class="trace-layer l-ui">React</span><span class="trace-detail"><span class="hl">LandingPage.jsx</span> mounts → <span class="grn">useEffect</span> fires → calls <span class="hl">api.get('/vacancies/open')</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-api">HTTP</span><span class="trace-detail"><span class="grn">GET /api/vacancies/open</span> — no token required (public endpoint)</span></div>
+        <div class="trace-row"><span class="trace-layer l-ctrl">Controller</span><span class="trace-detail"><span class="hl">PublicVacancyController.openVacancies()</span><span class="file">PublicVacancyController.java</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-db">Database</span><span class="trace-detail"><code class="grn">SELECT * FROM vacancies WHERE status='Open' ORDER BY posted_at DESC</code> → returns 25 rows</span></div>
+        <div class="trace-row"><span class="trace-layer l-ui">React</span><span class="trace-detail">Each vacancy mapped to <span class="hl">VacancyResponse</span> DTO → field <span class="grn">orgName</span> from <code>v.getEmployer().getOrgName()</code> → rendered in blue on each card</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <div class="step-icon">🔒</div>
+      <div>
+        <div class="step-action">Click "Apply Now" on any card — not logged in</div>
+        <div class="step-sub">Shows route protection in action</div>
+      </div>
+      <span class="arrow"></span>
+    </div>
+    <div class="step-body">
+      <div class="say">If a visitor tries to apply without logging in, they're redirected to the login page. Unauthenticated users can browse but cannot apply.</div>
+      <div class="trace">
+        <div class="trace-title">Click flow — not logged in</div>
+        <div class="trace-row"><span class="trace-layer l-ui">React</span><span class="trace-detail"><span class="hl">LandingPage.jsx</span> — button <code>onClick</code> checks <span class="hl">isLoggedInCandidate</span> = <span class="red">false</span> → calls <span class="grn">navigate('/login')</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-ui">Router</span><span class="trace-detail">React Router renders <span class="hl">LoginPage.jsx</span> — no API call made yet</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S2 -->
+<div class="section" id="s2">
+  <div class="section-header">
+    <div class="section-num">2</div>
+    <div class="section-title">Candidate Login</div>
+    <div class="section-time">1 min</div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <div class="step-icon">🔑</div>
+      <div>
+        <div class="step-action">Go to http://localhost:5173/login → enter nisha@demo.com / Test@1234 → click Login</div>
+        <div class="step-sub">LoginPage.jsx → POST /api/auth/login</div>
+      </div>
+      <span class="arrow"></span>
+    </div>
+    <div class="step-body">
+      <div class="say">Candidates log in here. The JWT is stored as an httpOnly cookie — it cannot be read by JavaScript, which protects against XSS attacks.</div>
+      <div class="trace">
+        <div class="trace-title">Full login flow — step by step</div>
+        <div class="trace-row"><span class="trace-layer l-ui">React</span><span class="trace-detail"><span class="hl">LoginPage.jsx → handleSubmit()</span> — calls <span class="grn">api.post('/auth/login', { email, password, role: 'CANDIDATE' })</span><span class="file">frontend/src/pages/LoginPage.jsx</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-api">HTTP</span><span class="trace-detail"><span class="grn">POST /api/auth/login</span> — body: <code>{ "email": "nisha@demo.com", "password": "Test@1234", "role": "CANDIDATE" }</code></span></div>
+        <div class="trace-row"><span class="trace-layer l-ctrl">Controller</span><span class="trace-detail"><span class="hl">AuthController.login()</span> → delegates to <span class="hl">AuthService.login(req)</span><span class="file">AuthController.java</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-svc">Service</span><span class="trace-detail"><span class="hl">AuthService.login()</span> — role is CANDIDATE → <span class="grn">candidateRepo.findByEmail("nisha@demo.com")</span> → found → <span class="grn">passwordEncoder.matches()</span> → BCrypt compare ✓<span class="file">AuthService.java</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-jwt">JWT</span><span class="trace-detail"><span class="hl">JwtUtil.generateToken(email, "CANDIDATE", candidateId)</span> — creates HMAC-SHA256 signed token with 24hr expiry, embeds email + role + userId as claims<span class="file">JwtUtil.java</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-ctrl">Controller</span><span class="trace-detail"><span class="hl">AuthController.setJwtCookie()</span> — sets cookie: <code>HttpOnly=true, Path=/, MaxAge=86400</code>. Token NOT in response body — only in cookie.</span></div>
+        <div class="trace-row"><span class="trace-layer l-ui">React</span><span class="trace-detail">Response body: <code>{ role, userId, name }</code> → stored in <span class="grn">localStorage</span> (non-sensitive). Then <span class="grn">navigate('/candidate/dashboard')</span></span></div>
+      </div>
+      <div class="tip">Every subsequent API call sends the httpOnly cookie automatically via <code>withCredentials: true</code> in <code>axios.js</code>. The token never touches JavaScript memory after login.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S3 -->
+<div class="section" id="s3">
+  <div class="section-header">
+    <div class="section-num">3</div>
+    <div class="section-title">Candidate Applies for a Job</div>
+    <div class="section-time">4 min</div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <div class="step-icon">🔍</div>
+      <div>
+        <div class="step-action">Navigate to Job Search → click "Apply" on AWS Trainee Engineer (CloudEdge, Pune)</div>
+        <div class="step-sub">JobSearchPage.jsx — detail modal opens first, not apply form</div>
+      </div>
+      <span class="arrow"></span>
+    </div>
+    <div class="step-body">
+      <div class="say">Instead of jumping straight to the apply form, the candidate first sees the full job details — description, salary, qualifications, employment type. They make an informed decision before committing to apply. This reduces mismatched applications.</div>
+      <div class="trace">
+        <div class="trace-title">Click "Apply" on job card</div>
+        <div class="trace-row"><span class="trace-layer l-ui">React</span><span class="trace-detail"><span class="hl">JobSearchPage.jsx</span> card button <code>onClick</code>: checks <span class="grn">appliedIds.has(v.vacancyId)</span> → false → calls <span class="grn">setDetailVacancy(v)</span> — sets state with vacancy object<span class="file">JobSearchPage.jsx line ~279</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-ui">React</span><span class="trace-detail">Detail modal renders with <span class="grn">detailVacancy</span> data — dark header shows designation + <span class="hl">orgName</span> in blue. Full JD displayed below.</span></div>
+      </div>
+      <p>Point out in the modal: company name <strong>TechNova Solutions</strong> in blue in the header, full job description, all 8 metadata fields (location, salary, deadline, type, qualification, experience, openings, department).</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <div class="step-icon">📄</div>
+      <div>
+        <div class="step-action">Click "Apply Now" in the modal footer → upload PDF resume → write cover note → Submit Application</div>
+        <div class="step-sub">Two API calls: POST /applications then POST /applications/{id}/resume</div>
+      </div>
+      <span class="arrow"></span>
+    </div>
+    <div class="step-body">
+      <div class="say">Resume upload is mandatory — PDF only, 5 MB max. The application is submitted in two steps: first the application record is created to get an ID, then the resume is uploaded and linked to that ID.</div>
+      <div class="trace">
+        <div class="trace-title">Step 1 — Submit application</div>
+        <div class="trace-row"><span class="trace-layer l-ui">React</span><span class="trace-detail"><span class="hl">handleApply()</span> in <span class="hl">JobSearchPage.jsx</span> — validates PDF file → calls <span class="grn">api.post('/applications', { vacancyId, coverNote })</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-api">HTTP</span><span class="trace-detail"><span class="grn">POST /api/applications</span> — JWT cookie sent automatically → Spring Security validates via <span class="hl">JwtAuthFilter</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-ctrl">Controller</span><span class="trace-detail"><span class="hl">ApplicationController.apply()</span> — <code>@AuthenticationPrincipal String candidateEmail</code> extracted from JWT claims<span class="file">ApplicationController.java</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-svc">Service</span><span class="trace-detail"><span class="hl">ApplicationService.apply()</span> — 1) finds candidate by email, 2) finds vacancy by ID, 3) checks for duplicate: <span class="grn">existsByVacancy_VacancyIdAndCandidate_CandidateIdAndStatusNot(vacancyId, candidateId, "Withdrawn")</span>, 4) checks 3-month cooldown, 5) saves Application entity<span class="file">ApplicationService.java</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-db">Database</span><span class="trace-detail"><code class="grn">INSERT INTO applications (vacancy_id, candidate_id, cover_note, status) VALUES (?, ?, ?, 'Applied')</code> → returns new <code>application_id</code></span></div>
+        <div class="trace-row"><span class="trace-layer l-svc">Service</span><span class="trace-detail">Triggers <span class="hl">notificationService.notify()</span> — saves notification to DB for both candidate (confirmation) and employer (new application)</span></div>
+      </div>
+      <div class="trace">
+        <div class="trace-title">Step 2 — Upload resume</div>
+        <div class="trace-row"><span class="trace-layer l-ui">React</span><span class="trace-detail">Uses <code>applicationId</code> from Step 1 response → builds <code>FormData</code> with file → calls <span class="grn">api.post('/applications/{id}/resume', formData)</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-api">HTTP</span><span class="trace-detail"><span class="grn">POST /api/applications/{id}/resume</span> — multipart/form-data</span></div>
+        <div class="trace-row"><span class="trace-layer l-ctrl">Controller</span><span class="trace-detail"><span class="hl">ResumeController.uploadResume()</span> — validates content-type = <code>application/pdf</code> + file size ≤ 5 MB<span class="file">ResumeController.java</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-db">Database</span><span class="trace-detail">File saved to <code>./uploads/{applicationId}_{filename}.pdf</code> → <code class="grn">UPDATE applications SET resume_path=? WHERE application_id=?</code></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <div class="step-icon">⬇️</div>
+      <div>
+        <div class="step-action">Stay on Job Search — observe AWS Trainee Engineer moved to bottom, shows "Applied ✓"</div>
+        <div class="step-sub">Applied jobs de-prioritised in the list</div>
+      </div>
+      <span class="arrow"></span>
+    </div>
+    <div class="step-body">
+      <div class="say">Applied jobs sink to the bottom of the list automatically — so candidates always see fresh unapplied opportunities at the top. This persists even after a page reload because the applied IDs are loaded from the backend on mount.</div>
+      <div class="trace">
+        <div class="trace-title">How applied sorting works</div>
+        <div class="trace-row"><span class="trace-layer l-ui">React</span><span class="trace-detail"><span class="hl">JobSearchPage.jsx</span> mounts → calls <span class="grn">api.get('/applications/my')</span> → seeds <span class="hl">appliedIds</span> Set with all vacancyIds the candidate has applied to<span class="file">JobSearchPage.jsx line ~152</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-ui">React</span><span class="trace-detail">Filtered list sorted: <span class="grn">.sort((a,b) => (appliedIds.has(a.vacancyId)?1:0) - (appliedIds.has(b.vacancyId)?1:0))</span> — applied jobs get sort value 1 (sink to bottom)</span></div>
+        <div class="trace-row"><span class="trace-layer l-ui">React</span><span class="trace-detail">Button text changes: <span class="grn">"Applied ✓"</span> and is disabled when <code>appliedIds.has(v.vacancyId)</code> is true</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S4 -->
+<div class="section" id="s4">
+  <div class="section-header">
+    <div class="section-num">4</div>
+    <div class="section-title">My Applications — Candidate View</div>
+    <div class="section-time">3 min</div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <div class="step-icon">📋</div>
+      <div>
+        <div class="step-action">Logout → Login as priya@demo.com → go to /candidate/applications</div>
+        <div class="step-sub">Shows all statuses including Selected</div>
+      </div>
+      <span class="arrow"></span>
+    </div>
+    <div class="step-body">
+      <div class="say">Priya was selected for the Senior Java Backend Developer role at TechNova. The green banner shows "Congratulations!" and the status journey tracker shows all 5 steps fully lit.</div>
+      <div class="trace">
+        <div class="trace-title">Page load data flow</div>
+        <div class="trace-row"><span class="trace-layer l-ui">React</span><span class="trace-detail"><span class="hl">MyApplicationsPage.jsx</span> → <span class="grn">loadAll()</span> calls <span class="grn">GET /api/applications/my</span> and <span class="grn">GET /api/candidate/interviews</span> in parallel via <code>Promise.all</code></span></div>
+        <div class="trace-row"><span class="trace-layer l-ctrl">Controller</span><span class="trace-detail"><span class="hl">ApplicationController.myApplications()</span> — email extracted from JWT → <span class="grn">getCandidateApplications(email)</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-svc">Service</span><span class="trace-detail"><span class="hl">ApplicationService.toResponse()</span> — maps each Application entity to DTO including: <span class="grn">employerId</span> = <code>app.getVacancy().getEmployer().getEmployerId()</code> (needed for Report button)</span></div>
+        <div class="trace-row"><span class="trace-layer l-ui">React</span><span class="trace-detail"><span class="hl">ApplicationCard</span> renders — terminal states (Selected/Rejected/Withdrawn) show coloured banner + greyed card + no actions available</span></div>
+      </div>
+      <p>Point out the <strong>Status Journey</strong> tracker — 5 steps: Applied → Shortlisted → Interview Scheduled → Interview Completed → Selected. All lit green for Priya.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <div class="step-icon">🚩</div>
+      <div>
+        <div class="step-action">Show the Report button on a card</div>
+        <div class="step-sub">Only visible after applying — not on job search pages</div>
+      </div>
+      <span class="arrow"></span>
+    </div>
+    <div class="step-body">
+      <div class="say">The Report button appears only here — My Applications — only after the candidate has actually applied and interacted with the employer. We deliberately don't show it on job search cards because a candidate who hasn't applied has no basis for a conduct report.</div>
+      <div class="trace">
+        <div class="trace-title">Why Report is here and not on job cards</div>
+        <div class="trace-row"><span class="trace-layer l-ui">React</span><span class="trace-detail"><span class="hl">ApplicationCard</span> renders Report button only if <span class="grn">employerId</span> is truthy — this field comes from the application response DTO</span></div>
+        <div class="trace-row"><span class="trace-layer l-svc">Service</span><span class="trace-detail"><span class="hl">ApplicationService.toResponse()</span> sets <span class="grn">r.setEmployerId(app.getVacancy().getEmployer().getEmployerId())</span> — links the applied vacancy's employer to the application<span class="file">ApplicationDTOs.java — employerId field added to ApplicationResponse</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-api">HTTP</span><span class="trace-detail">On submit: <span class="grn">POST /api/reports/employer/{employerId}</span> with <code>{ reason: "[Rating: 4/5] [Issue: Ghost employer] ..." }</code><span class="file">ReportController.java</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-db">Database</span><span class="trace-detail"><code class="grn">INSERT INTO reports (reporter_id, reporter_type, reported_id, reported_type, reason)</code> → visible to admin</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S5 -->
+<div class="section" id="s5">
+  <div class="section-header">
+    <div class="section-num">5</div>
+    <div class="section-title">Employer Login</div>
+    <div class="section-time">1 min</div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <div class="step-icon">🏢</div>
+      <div>
+        <div class="step-action">Go to http://localhost:5173/employer/login → enter hr@technova.com / Test@1234 → Login</div>
+        <div class="step-sub">EmployerLoginPage.jsx → POST /api/auth/login with role: EMPLOYER</div>
+      </div>
+      <span class="arrow"></span>
+    </div>
+    <div class="step-body">
+      <div class="say">TechNova Solutions is a software product company. They've posted 7 open positions on RecPro. The employer login flow is identical to candidate login except the role field is "EMPLOYER".</div>
+      <div class="trace">
+        <div class="trace-title">Employer login flow</div>
+        <div class="trace-row"><span class="trace-layer l-ui">React</span><span class="trace-detail"><span class="hl">EmployerLoginPage.jsx → handleSubmit()</span> calls <span class="grn">api.post('/auth/login', { email, password, role: 'EMPLOYER' })</span><span class="file">EmployerLoginPage.jsx</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-svc">Service</span><span class="trace-detail"><span class="hl">AuthService.login()</span> — role is EMPLOYER → <span class="grn">employerRepo.findByEmail()</span> → BCrypt verify → checks <span class="grn">employer.getIsActive() == true</span> (pending employers blocked here)<span class="file">AuthService.java</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-jwt">JWT</span><span class="trace-detail">Token generated with role claim = <span class="grn">"EMPLOYER"</span> → set as httpOnly cookie → response body returns <code>{ role, userId, name, orgName }</code></span></div>
+        <div class="trace-row"><span class="trace-layer l-ui">React</span><span class="trace-detail">Stores <code>role=EMPLOYER</code>, <code>userId</code>, <code>name</code>, <code>orgName</code> in localStorage → <span class="grn">navigate('/employer/dashboard')</span></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S6 -->
+<div class="section" id="s6">
+  <div class="section-header">
+    <div class="section-num">6</div>
+    <div class="section-title">Vacancy Management</div>
+    <div class="section-time">2 min</div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <div class="step-icon">📝</div>
+      <div>
+        <div class="step-action">Click "Vacancies" in navbar → show 7 open positions → click Edit on "Senior Java Backend Developer"</div>
+        <div class="step-sub">VacancyManagementPage.jsx</div>
+      </div>
+      <span class="arrow"></span>
+    </div>
+    <div class="step-body">
+      <div class="say">TechNova has posted 7 positions. Each vacancy has a full job description, salary range, number of openings, deadline, and department. The job description is what candidates see in the detail modal before applying.</div>
+      <div class="trace">
+        <div class="trace-title">Load vacancies</div>
+        <div class="trace-row"><span class="trace-layer l-api">HTTP</span><span class="trace-detail"><span class="grn">GET /api/vacancies</span> — employer JWT cookie → returns only this employer's vacancies</span></div>
+        <div class="trace-row"><span class="trace-layer l-ctrl">Controller</span><span class="trace-detail"><span class="hl">VacancyController</span> → <span class="hl">VacancyService.getByEmployer(email)</span> → filters vacancies by employer email</span></div>
+      </div>
+      <div class="trace">
+        <div class="trace-title">Auto-close scheduler (bonus point to mention)</div>
+        <div class="trace-row"><span class="trace-layer l-svc">Scheduler</span><span class="trace-detail"><span class="hl">VacancyExpiryScheduler.java</span> — annotated with <span class="grn">@Scheduled(cron = "0 0 0 * * *")</span> — runs every midnight, finds Open vacancies past deadline, sets <code>status = Closed</code> automatically</span></div>
+      </div>
+      <p>Scroll through the job description textarea — show it's a real, detailed JD with responsibilities, requirements, and what we offer sections.</p>
+      <p>Close modal <strong>without saving</strong>.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S7 -->
+<div class="section" id="s7">
+  <div class="section-header">
+    <div class="section-num">7</div>
+    <div class="section-title">Applications Panel — The Core Demo</div>
+    <div class="section-time">7 min</div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <div class="step-icon">📊</div>
+      <div>
+        <div class="step-action">Click "Applications" in navbar → select "Senior Java Backend Developer"</div>
+        <div class="step-sub">Two-panel layout: left = applicant list, right = detail panel</div>
+      </div>
+      <span class="arrow"></span>
+    </div>
+    <div class="step-body">
+      <div class="say">This vacancy has 8 applicants — every status in the recruitment lifecycle is represented in one place. Let me walk you through each one.</div>
+      <div class="trace">
+        <div class="trace-title">Load applications for a vacancy</div>
+        <div class="trace-row"><span class="trace-layer l-api">HTTP</span><span class="trace-detail"><span class="grn">GET /api/employer/applications?vacancyId={id}</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-svc">Service</span><span class="trace-detail"><span class="hl">ApplicationService.getVacancyApplications()</span> — verifies <span class="grn">vacancy.getEmployer().getEmail().equals(employerEmail)</span> before returning. Prevents IDOR — employer A cannot see employer B's applications by guessing IDs.</span></div>
+      </div>
+      <p>Walk the left panel — click each card and read from this table:</p>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;margin:10px 0">
+        <tr style="background:#0f172a;color:#fff"><th style="padding:6px 10px;text-align:left">Candidate</th><th>Status</th><th>AI Score</th><th style="padding:6px 10px;text-align:left">Say this</th></tr>
+        <tr style="background:#f0fdf4"><td style="padding:6px 10px;font-weight:600">Amit Kulkarni</td><td style="text-align:center"><span class="pill pill-purple">Interview Scheduled</span></td><td style="text-align:center;font-weight:700;color:#2563eb">95</td><td style="padding:6px 10px">Highest AI score. Interview already scheduled 3 days from now.</td></tr>
+        <tr><td style="padding:6px 10px;font-weight:600">Priya Sharma</td><td style="text-align:center"><span class="pill pill-green">Selected</span></td><td style="text-align:center;font-weight:700;color:#2563eb">91</td><td style="padding:6px 10px">Selected. The AI correctly identified her as the top candidate.</td></tr>
+        <tr style="background:#f8fafc"><td style="padding:6px 10px;font-weight:600">Arun Nambiar</td><td style="text-align:center"><span class="pill pill-red">Rejected</span></td><td style="text-align:center;font-weight:700;color:#2563eb">85</td><td style="padding:6px 10px">Score 85 but rejected — salary expectation exceeded budget. AI score is a guide, not the final decision.</td></tr>
+        <tr><td style="padding:6px 10px;font-weight:600">Vikram Singh</td><td style="text-align:center"><span class="pill pill-blue">Shortlisted</span></td><td style="text-align:center;font-weight:700;color:#2563eb">73</td><td style="padding:6px 10px">Shortlisted — DevOps background, wants to pivot to Java.</td></tr>
+        <tr style="background:#f8fafc"><td style="padding:6px 10px;font-weight:600">Rahul Mehta</td><td style="text-align:center"><span class="pill pill-amber">Interview Completed</span></td><td style="text-align:center;font-weight:700;color:#2563eb">62</td><td style="padding:6px 10px">Interview done — remarks show he struggled with Java specifics.</td></tr>
+        <tr><td style="padding:6px 10px;font-weight:600">Sneha Joshi</td><td style="text-align:center"><span class="pill pill-blue">Applied</span></td><td style="text-align:center;font-weight:700;color:#2563eb">55</td><td style="padding:6px 10px">New application — JS developer learning Java.</td></tr>
+        <tr style="background:#f8fafc"><td style="padding:6px 10px;font-weight:600">Deepa Krishnan</td><td style="text-align:center"><span class="pill pill-blue">Applied</span></td><td style="text-align:center;font-weight:700;color:#2563eb">28</td><td style="padding:6px 10px">Score 28 — fresher applying for senior role. AI correctly flagged low match.</td></tr>
+        <tr><td style="padding:6px 10px;font-weight:600">Anita Rao</td><td style="text-align:center"><span class="pill pill-red">Withdrawn</span></td><td style="text-align:center;font-weight:700;color:#2563eb">38</td><td style="padding:6px 10px">Candidate withdrew — acknowledged it was a mismatch.</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <div class="step-icon">🤖</div>
+      <div>
+        <div class="step-action">Click Amit Kulkarni — point to the right panel: AI summary, resume download, status pills</div>
+        <div class="step-sub">AI Analysis feature</div>
+      </div>
+      <span class="arrow"></span>
+    </div>
+    <div class="step-body">
+      <div class="say">Everything about Amit in one panel — the AI scored him 95 out of 100 and wrote this plain-English summary. The employer can read the cover note, download the resume, and take action — all without leaving this page.</div>
+      <p>Click <strong>"Download Resume"</strong> → PDF opens. AI summary is in the blue callout box.</p>
+      <div class="trace">
+        <div class="trace-title">How AI scoring works</div>
+        <div class="trace-row"><span class="trace-layer l-svc">Service</span><span class="trace-detail"><span class="hl">AiAnalysisService</span> is called on application submission — sends JD + cover note to AI API, receives <code>aiScore</code> (1–100) + <code>aiSummary</code> (plain English)<span class="file">AiAnalysisService.java</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-db">Database</span><span class="trace-detail">Score + summary stored on <code>applications.ai_score</code> and <code>applications.ai_summary</code> columns</span></div>
+        <div class="trace-row"><span class="trace-layer l-ui">React</span><span class="trace-detail">Right panel renders AI summary in blue callout if <code>aiSummary</code> is non-null. Score shown as a number badge.</span></div>
+      </div>
+      <div class="trace">
+        <div class="trace-title">Resume download</div>
+        <div class="trace-row"><span class="trace-layer l-api">HTTP</span><span class="trace-detail"><span class="grn">GET /api/resumes/{filename}</span> — no auth required (public read, filename acts as access token)</span></div>
+        <div class="trace-row"><span class="trace-layer l-ctrl">Controller</span><span class="trace-detail"><span class="hl">ResumeController.downloadResume()</span> — calls <span class="grn">Paths.get(uploadDir).resolve(filename).normalize()</span> — normalize() prevents path traversal attacks like <code>../../etc/passwd</code><span class="file">ResumeController.java</span></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <div class="step-icon">🔄</div>
+      <div>
+        <div class="step-action">Click Sneha Joshi (Applied) → click "Shortlist" pill in the right panel</div>
+        <div class="step-sub">Status update + automatic notification</div>
+      </div>
+      <span class="arrow"></span>
+    </div>
+    <div class="step-body">
+      <div class="say">One click updates the status. The candidate receives an instant in-app notification — "Congratulations! You've been shortlisted for React Frontend Developer." The status pill on the card changes immediately.</div>
+      <div class="trace">
+        <div class="trace-title">Status update flow</div>
+        <div class="trace-row"><span class="trace-layer l-api">HTTP</span><span class="trace-detail"><span class="grn">PATCH /api/employer/applications/{id}/status</span> — body: <code>{ "status": "Shortlisted" }</code></span></div>
+        <div class="trace-row"><span class="trace-layer l-ctrl">Controller</span><span class="trace-detail"><span class="hl">ApplicationController.updateStatus()</span> → <span class="hl">ApplicationService.updateStatus()</span> — verifies employer owns this vacancy before updating<span class="file">ApplicationController.java</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-db">Database</span><span class="trace-detail"><code class="grn">UPDATE applications SET status='Shortlisted' WHERE application_id=?</code></span></div>
+        <div class="trace-row"><span class="trace-layer l-svc">Service</span><span class="trace-detail">After save: <span class="hl">notificationService.notify(candidateEmail, "Candidate", subject, body, "STATUS_CHANGED")</span> — custom message per status. Shortlisted → "Congratulations! You've been shortlisted for..."<span class="file">ApplicationService.java → updateStatus()</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-db">Database</span><span class="trace-detail"><code class="grn">INSERT INTO notifications (recipient_email, recipient_type, subject, body, event_type)</code></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S8 -->
+<div class="section" id="s8">
+  <div class="section-header">
+    <div class="section-num">8</div>
+    <div class="section-title">Schedule Interview</div>
+    <div class="section-time">2 min</div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <div class="step-icon">📅</div>
+      <div>
+        <div class="step-action">Click Vikram Singh (now Shortlisted) → fill Schedule Interview form → click Schedule</div>
+        <div class="step-sub">Date: 2 days from now, Mode: Online, Interviewer: Arjun Kapoor</div>
+      </div>
+      <span class="arrow"></span>
+    </div>
+    <div class="step-body">
+      <div class="say">Scheduling an interview automatically updates the application status to "Interview Scheduled" and notifies the candidate with the date, mode, and interviewer's name. All in one action.</div>
+      <div class="trace">
+        <div class="trace-title">Schedule interview flow</div>
+        <div class="trace-row"><span class="trace-layer l-api">HTTP</span><span class="trace-detail"><span class="grn">POST /api/employer/interviews</span> — body: <code>{ applicationId, roundNumber: 1, interviewDatetime, mode, interviewerName }</code></span></div>
+        <div class="trace-row"><span class="trace-layer l-ctrl">Controller</span><span class="trace-detail"><span class="hl">InterviewController.schedule()</span> → <span class="hl">InterviewService.schedule()</span><span class="file">InterviewController.java</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-svc">Service</span><span class="trace-detail"><span class="hl">InterviewService.schedule()</span> — 1) verifies employer owns the application's vacancy, 2) saves Interview entity linked by <code>application_id</code> FK, 3) calls <span class="grn">applicationService.updateStatus()</span> to set "Interview Scheduled", 4) triggers notification to candidate<span class="file">InterviewService.java</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-db">Database</span><span class="trace-detail"><code class="grn">INSERT INTO interviews (application_id, round_number, interview_datetime, mode, interviewer_name, outcome)</code> — outcome defaults to "Scheduled"</span></div>
+      </div>
+      <p>After scheduling: Vikram's card updates to <span class="pill pill-purple">Interview Scheduled</span>. If you check the Interviews page, it appears there too.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S9 -->
+<div class="section" id="s9">
+  <div class="section-header">
+    <div class="section-num">9</div>
+    <div class="section-title">Admin Dashboard</div>
+    <div class="section-time">2 min</div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <div class="step-icon">🛡️</div>
+      <div>
+        <div class="step-action">Logout → go to http://localhost:5173/admin/login → admin@recpro.com / Test@1234 → Login as Admin</div>
+        <div class="step-sub">AdminLoginPage.jsx → POST /api/auth/login with role: ADMIN</div>
+      </div>
+      <span class="arrow"></span>
+    </div>
+    <div class="step-body">
+      <div class="say">The admin has a bird's-eye view of the entire platform — all employers, all candidates, and any reports filed. They can deactivate suspicious accounts.</div>
+      <div class="trace">
+        <div class="trace-title">Admin login — what's different</div>
+        <div class="trace-row"><span class="trace-layer l-ui">React</span><span class="trace-detail"><span class="hl">AdminLoginPage.jsx → handleLogin()</span> — calls <span class="grn">api.post('/auth/login', { email, password, role: 'ADMIN' })</span><span class="file">AdminLoginPage.jsx</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-svc">Service</span><span class="trace-detail"><span class="hl">AuthService.login()</span> role = ADMIN → <span class="grn">candidateRepo.findByEmail()</span> (admin IS stored in candidates table!) → checks <span class="grn">candidate.getRole().equals("ADMIN")</span> + BCrypt verify<span class="file">AuthService.java</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-jwt">JWT</span><span class="trace-detail">Token generated with role claim = <span class="grn">"ADMIN"</span> → Spring Security gives <code>ROLE_ADMIN</code> authority → admin routes accessible</span></div>
+      </div>
+      <div class="tip">Admin is stored in the candidates table with <code>role='ADMIN'</code>. This avoids creating a separate admin table for what is essentially one or two accounts.</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <div class="step-icon">👁️</div>
+      <div>
+        <div class="step-action">Show Employers list → Active pills → show Candidates list</div>
+        <div class="step-sub">AdminDashboard.jsx → GET /api/admin/employers + /api/admin/candidates</div>
+      </div>
+      <span class="arrow"></span>
+    </div>
+    <div class="step-body">
+      <div class="say">The admin sees all 5 employers with their active status, and all 10 candidates. The report bell icon highlights if any reports have been filed against an account. Clicking Deactivate calls the backend and blocks that employer from logging in — their account is flagged as inactive.</div>
+      <div class="trace">
+        <div class="trace-title">Deactivate employer</div>
+        <div class="trace-row"><span class="trace-layer l-api">HTTP</span><span class="trace-detail"><span class="grn">PATCH /api/admin/employers/{id}/deactivate</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-ctrl">Controller</span><span class="trace-detail"><span class="hl">AdminController.deactivateEmployer()</span> → <span class="hl">AdminService.setActiveEmployer(id, false)</span><span class="file">AdminController.java</span></span></div>
+        <div class="trace-row"><span class="trace-layer l-db">Database</span><span class="trace-detail"><code class="grn">UPDATE employers SET is_active=0 WHERE employer_id=?</code> — login blocked: <code>AuthService</code> checks <code>isActive</code> before issuing JWT</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ Q&A -->
+<div class="section" id="qa">
+  <div class="section-header">
+    <div class="section-num">❓</div>
+    <div class="section-title">Likely Questions from the Lecturer</div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q" onclick="toggleQA(this)">Why Spring Boot and not Node.js or Django?</div>
+    <div class="qa-a">Spring Boot gives us strong typing, built-in dependency injection, JPA/Hibernate ORM, and production-grade security via Spring Security — all out of the box. For an enterprise recruitment system where data integrity matters, Java's type safety reduces runtime errors. Spring Security's filter chain (JwtAuthFilter) makes it easy to plug in custom authentication without reinventing the wheel.</div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q" onclick="toggleQA(this)">Why MySQL and not MongoDB or PostgreSQL?</div>
+    <div class="qa-a">Recruitment data is highly relational — candidates, vacancies, applications, and interviews all reference each other with foreign keys. MySQL 8 gives us full ACID transactions, enum columns that prevent invalid status values at the DB level, and window functions for analytics. MongoDB would require manual join logic for every query that crosses entity boundaries.</div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q" onclick="toggleQA(this)">Why JWT stored in httpOnly cookie instead of localStorage?</div>
+    <div class="qa-a">If the JWT were in localStorage, any XSS vulnerability (injected script on the page) could read and steal it. An httpOnly cookie cannot be accessed by JavaScript at all — only sent automatically by the browser on each request. The tradeoff is CSRF risk, which we mitigate with SameSite cookie policy. This is the recommended pattern for browser-based apps.
+      <div class="trace" style="margin-top:10px">
+        <div class="trace-row"><span class="trace-layer l-jwt">JWT</span><span class="trace-detail"><span class="hl">AuthController.setJwtCookie()</span> — <code>cookie.setHttpOnly(true)</code>, <code>cookie.setPath("/")</code>, <code>MaxAge = expirationMs / 1000</code></span></div>
+        <div class="trace-row"><span class="trace-layer l-ui">axios</span><span class="trace-detail"><code>withCredentials: true</code> in <span class="hl">axios.js</span> ensures the cookie is sent with every cross-origin request to localhost:8080</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q" onclick="toggleQA(this)">What does the AI actually do — is it real?</div>
+    <div class="qa-a">Yes. <code>AiAnalysisService.java</code> sends the job description and the candidate's cover note to an AI API endpoint. The prompt asks it to score the candidate 1–100 and write a plain-English summary explaining the reasoning. The score and summary are stored on the <code>applications</code> table columns <code>ai_score</code> and <code>ai_summary</code>. This runs automatically on application submission — no manual trigger needed.</div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q" onclick="toggleQA(this)">What prevents an employer from seeing another employer's applications? (IDOR)</div>
+    <div class="qa-a">Every service method checks ownership before returning data. In <code>ApplicationService.getVacancyApplications()</code>: <code>if (!vacancy.getEmployer().getEmail().equals(employerEmail)) throw new SecurityException("Access denied")</code>. Even if an attacker has a valid EMPLOYER JWT and guesses another employer's vacancyId, they get a 403. This is called IDOR prevention (Insecure Direct Object Reference).
+      <div class="trace" style="margin-top:10px">
+        <div class="trace-row"><span class="trace-layer l-svc">Service</span><span class="trace-detail"><span class="file">ApplicationService.java → getVacancyApplications()</span><br><span class="grn">vacancy.getEmployer().getEmail().equals(employerEmail)</span> — throws <span class="red">SecurityException</span> if false</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q" onclick="toggleQA(this)">What is the 3-month reapply cooldown?</div>
+    <div class="qa-a">After a candidate withdraws an application, they cannot re-apply to the same vacancy for 3 months. This prevents gaming the system (apply → withdraw → apply again repeatedly). In <code>ApplicationService.apply()</code>, if a prior withdrawn application exists, it computes <code>withdrawnAt.plusMonths(3)</code> and throws an <code>IllegalArgumentException</code> with the exact re-apply date if the cooldown hasn't passed.
+      <div class="trace" style="margin-top:10px">
+        <div class="trace-row"><span class="trace-layer l-svc">Service</span><span class="trace-detail"><span class="file">ApplicationService.java → apply()</span><br>Finds prior withdrawn record → <span class="grn">withdrawnAt.plusMonths(3)</span> → if <span class="red">now.isBefore(earliestReapply)</span> → throws with message "You may apply again from YYYY-MM-DD"</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q" onclick="toggleQA(this)">Why is the Applications page a two-panel layout instead of a table?</div>
+    <div class="qa-a">Tables can only show a few columns before requiring horizontal scroll. A two-panel layout lets the employer see the full application detail — AI summary, cover note, resume, and all action buttons — without navigating away from the list. This is the same UX pattern used by Gmail, Outlook, and Jira. The left panel gives a quick scannable overview; the right panel gives depth on demand.</div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q" onclick="toggleQA(this)">How does ddl-auto=validate work and why not auto-create?</div>
+    <div class="qa-a"><code>ddl-auto=validate</code> tells Hibernate to check that the entity classes match the existing database schema on startup — but never create or alter any tables. This is the production-safe setting. Schema changes are made manually via ALTER TABLE SQL scripts. If Hibernate detects a mismatch (e.g. a missing column), it throws an error at startup and prevents the app from running with inconsistent schema.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ RESET -->
+<div class="section" id="reset">
+  <div class="section-header">
+    <div class="section-num">🔄</div>
+    <div class="section-title">Reset Data — If Something Goes Wrong</div>
+  </div>
+  <div class="warn">If the demo data gets corrupted or you want to restart cleanly, run this command. It truncates ALL tables and reloads clean data in ~2 seconds.</div>
+  <div class="reset">
+    <span class="reset-label">Terminal:</span>
+    <code>mysql -u root recruitment_db &lt; docs/seed-demo.sql</code>
+  </div>
+  <div class="reset">
+    <span class="reset-label">Then restart backend:</span>
+    <code>cd backend && mvn spring-boot:run</code>
+  </div>
+  <p style="margin-top:12px;font-size:13px">After reset: all 8 TechNova Java Backend applicants restored with original statuses, all 14 resumes still in <code>backend/uploads/</code>, all 5 employers and 10 candidates available.</p>
+</div>
+
+</div><!-- /main -->
+
+<script>
+function toggle(header) {
+  const body = header.nextElementSibling;
+  body.classList.toggle('open');
+  header.classList.toggle('open');
+}
+function toggleQA(qEl) {
+  const a = qEl.nextElementSibling;
+  a.classList.toggle('open');
+}
+function goTo(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+}
+
+// Auto-open first step of each section so it's visible on load
+document.querySelectorAll('.step').forEach((step, i) => {
+  if (i === 0) {
+    const header = step.querySelector('.step-header');
+    const body = step.querySelector('.step-body');
+    body.classList.add('open');
+    header.classList.add('open');
+  }
+});
+
+// Progress bar on scroll
+window.addEventListener('scroll', () => {
+  const doc = document.documentElement;
+  const scrolled = (doc.scrollTop / (doc.scrollHeight - doc.clientHeight)) * 100;
+  document.getElementById('progress-fill').style.width = scrolled + '%';
+});
+
+// Keyboard shortcut: press '/' to focus sidebar
+document.addEventListener('keydown', e => {
+  if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+    document.querySelector('.nav-item').focus();
+    e.preventDefault();
+  }
+});
+</script>
+</body>
+</html>

@@ -21,6 +21,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -115,55 +117,110 @@ public class AiAnalysisService {
     }
 
     private AnalysisResult callAi(String jobContext, String resumeText) throws Exception {
-        String prompt = """
-                You are a recruitment assistant. Analyse how well this candidate's resume matches the job requirements.
+        try {
+            String prompt = """
+                    You are a recruitment assistant. Analyse how well this candidate's resume matches the job requirements.
 
-                JOB REQUIREMENTS:
-                %s
+                    JOB REQUIREMENTS:
+                    %s
 
-                CANDIDATE RESUME:
-                %s
+                    CANDIDATE RESUME:
+                    %s
 
-                Respond ONLY with valid JSON in this exact format (no markdown, no extra text):
-                {"score": <integer 0-100>, "summary": "<2-3 sentences: key strengths and gaps>"}
+                    Respond ONLY with valid JSON in this exact format (no markdown, no extra text):
+                    {"score": <integer 0-100>, "summary": "<2-3 sentences: key strengths and gaps>"}
 
-                Score guide: 80-100 = excellent match, 60-79 = good match, 40-59 = partial match, 0-39 = poor match.
-                """.formatted(jobContext, resumeText);
+                    Score guide: 80-100 = excellent match, 60-79 = good match, 40-59 = partial match, 0-39 = poor match.
+                    """.formatted(jobContext, resumeText);
 
-        String requestBody = objectMapper.writeValueAsString(new java.util.LinkedHashMap<>() {{
-            put("model", model);
-            put("max_tokens", 300);
-            put("messages", List.of(java.util.Map.of("role", "user", "content", prompt)));
-        }});
+            String requestBody = objectMapper.writeValueAsString(new java.util.LinkedHashMap<>() {{
+                put("model", model);
+                put("max_tokens", 300);
+                put("messages", List.of(java.util.Map.of("role", "user", "content", prompt)));
+            }});
 
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/chat/completions"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody));
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/chat/completions"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody));
 
-        if (apiKey != null && !apiKey.isBlank()) {
-            builder.header("Authorization", "Bearer " + apiKey);
+            if (apiKey != null && !apiKey.isBlank()) {
+                builder.header("Authorization", "Bearer " + apiKey);
+            }
+
+            HttpResponse<String> response = HttpClient.newHttpClient()
+                    .send(builder.build(), HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200) {
+                throw new RuntimeException("AI API error " + response.statusCode() + ": " + response.body());
+            }
+
+            JsonNode root = objectMapper.readTree(response.body());
+            String content = root.path("choices").get(0).path("message").path("content").asText();
+
+            content = content.trim();
+            if (content.startsWith("```")) {
+                content = content.replaceAll("```[a-z]*\\n?", "").replace("```", "").trim();
+            }
+
+            JsonNode parsed = objectMapper.readTree(content);
+            AnalysisResult result = new AnalysisResult();
+            result.score = parsed.path("score").asInt(0);
+            result.summary = parsed.path("summary").asText("No summary available");
+            return result;
+        } catch (Exception e) {
+            log.warn("AI service unreachable, using fallback scoring: {}", e.getMessage());
+            return getFallbackResult(resumeText, jobContext);
+        }
+    }
+
+    private static final List<String> TECH_KEYWORDS = Arrays.asList(
+            "java", "spring", "springboot", "microservices", "rest", "api", "kafka",
+            "hibernate", "jpa", "mysql", "postgresql", "docker", "kubernetes", "aws",
+            "azure", "python", "react", "javascript", "typescript", "node", "devops",
+            "ci/cd", "jenkins", "git", "agile", "scrum", "backend", "frontend", "fullstack"
+    );
+
+    private AnalysisResult getFallbackResult(String resumeText, String jobDesc) {
+        String resumeLower = resumeText.toLowerCase();
+        String jobLower = jobDesc.toLowerCase();
+
+        List<String> matched = new ArrayList<>();
+        for (String keyword : TECH_KEYWORDS) {
+            if (resumeLower.contains(keyword) && jobLower.contains(keyword)) {
+                matched.add(keyword);
+            }
         }
 
-        HttpResponse<String> response = HttpClient.newHttpClient()
-                .send(builder.build(), HttpResponse.BodyHandlers.ofString());
-
-        if (response.statusCode() != 200) {
-            throw new RuntimeException("AI API error " + response.statusCode() + ": " + response.body());
+        // Count keywords that appear in the JD but not the resume (gaps)
+        List<String> inJdOnly = new ArrayList<>();
+        for (String keyword : TECH_KEYWORDS) {
+            if (jobLower.contains(keyword) && !resumeLower.contains(keyword)) {
+                inJdOnly.add(keyword);
+            }
         }
 
-        JsonNode root = objectMapper.readTree(response.body());
-        String content = root.path("choices").get(0).path("message").path("content").asText();
+        // Normalize: score = matched / max(jdKeywords, 1) * 100, capped at 100
+        long jdKeywordCount = TECH_KEYWORDS.stream().filter(k -> jobLower.contains(k)).count();
+        int score = jdKeywordCount == 0 ? 0 : (int) Math.min(100, Math.round((matched.size() * 100.0) / jdKeywordCount));
 
-        content = content.trim();
-        if (content.startsWith("```")) {
-            content = content.replaceAll("```[a-z]*\\n?", "").replace("```", "").trim();
+        String summary;
+        if (score >= 80) {
+            String skills = matched.stream().limit(3).collect(Collectors.joining(", "));
+            summary = "Strong match. Candidate demonstrates solid experience with " + skills + ". Well-suited for the role requirements.";
+        } else if (score >= 60) {
+            String skills = matched.stream().limit(2).collect(Collectors.joining(", "));
+            String gap = inJdOnly.stream().findFirst().orElse("some required areas");
+            summary = "Good match. Candidate has relevant background in " + skills + " with some gaps in " + gap + ".";
+        } else if (score >= 40) {
+            summary = "Partial match. Candidate shows potential but limited direct experience with the core requirements.";
+        } else {
+            summary = "Weak match. Candidate's background does not closely align with the technical requirements of this role.";
         }
 
-        JsonNode parsed = objectMapper.readTree(content);
         AnalysisResult result = new AnalysisResult();
-        result.score = parsed.path("score").asInt(0);
-        result.summary = parsed.path("summary").asText("No summary available");
+        result.score = score;
+        result.summary = summary;
         return result;
     }
 }
